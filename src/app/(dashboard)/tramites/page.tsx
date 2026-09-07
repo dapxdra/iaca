@@ -1,11 +1,13 @@
+import { dashboardPages } from "@/config/site";
+
+const content = dashboardPages.tramites;
+
 export default function TramitesPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Trámites gubernamentales</h1>
+    <div data-cy="page-tramites">
+      <h1 className="text-2xl font-semibold">{content.title}</h1>
       <p className="mt-2 text-sm text-foreground/70">
-        Registro de envíos de documentos a entidades (Catastro Nacional, municipalidades,
-        etc.), con fecha de envío y alertas de proyectos sin revisión. Ver{" "}
-        <code>docs/REQUIREMENTS.md</code> sección 4.5.
+        {content.description} Ver <code>{content.docsRef}</code>.
       </p>
     </div>
   );

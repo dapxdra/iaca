@@ -1,10 +1,13 @@
+import { dashboardPages } from "@/config/site";
+
+const content = dashboardPages.bitacora;
+
 export default function BitacoraPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Bitácora de campo</h1>
+    <div data-cy="page-bitacora">
+      <h1 className="text-2xl font-semibold">{content.title}</h1>
       <p className="mt-2 text-sm text-foreground/70">
-        Registro diario de actividades de los trabajadores de campo, con carga de fotos.
-        Ver <code>docs/REQUIREMENTS.md</code> sección 4.3.
+        {content.description} Ver <code>{content.docsRef}</code>.
       </p>
     </div>
   );

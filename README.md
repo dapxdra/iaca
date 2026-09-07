@@ -101,22 +101,31 @@ git push -u origin main
 ## Estructura del proyecto
 
 ```
+proxy.ts                        → refresca sesión de Supabase y protege rutas del dashboard
+                                   (reemplaza a middleware.ts, deprecado en Next.js 16)
 src/
+  config/
+    site.ts                      → toda la configuración parametrizable: nombre de la app,
+                                    textos, navegación, títulos de cada página del dashboard
   app/
-    page.tsx                 → sitio informativo (público)
-    (auth)/login/            → inicio de sesión
-    (dashboard)/             → área interna (requiere sesión)
+    page.tsx                     → sitio informativo (público)
+    (auth)/login/                → login (Server Action + validación con zod)
+    (dashboard)/                 → área interna (requiere sesión, protegida por middleware)
       proyectos/
       clientes/
       bitacora/
       tramites/
       kpi/
+  services/                      → capa de lógica de negocio (patrón SOA, ver CLAUDE.md)
+    auth.service.ts               → login/logout
+    clientes.service.ts           → ejemplo de referencia para servicios por entidad
   lib/
     supabase/
-      client.ts              → cliente de Supabase para componentes de navegador
-      server.ts               → cliente de Supabase para Server Components/Actions
+      client.ts                  → cliente de Supabase para componentes de navegador
+      server.ts                  → cliente de Supabase para Server Components/Actions
+      proxy.ts                   → lógica de refresco/redirección usada por proxy.ts (raíz)
   types/
-    database.ts               → tipos generados desde el esquema de Supabase
+    database.ts                   → tipos generados desde el esquema de Supabase
 supabase/
   migrations/
     0001_init.sql              → esquema completo: clientes, proyectos, subproyectos,
@@ -126,6 +135,9 @@ docs/
   REQUIREMENTS.md               → documento de requerimientos completo
   PROPUESTA-TECNICA-Y-COSTOS.md → stack técnico y estimación de costos
 ```
+
+Convenciones del proyecto (arquitectura SOA, parametrización, `data-cy`, seguridad, etc.):
+ver [`CLAUDE.md`](./CLAUDE.md).
 
 ## Próximos pasos recomendados (en orden)
 

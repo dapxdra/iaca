@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { siteConfig } from "@/config/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "IACA | Servicios de Topografía",
-  description:
-    "Plataforma de gestión de proyectos, campo, cálculo, dibujo y entrega para servicios de topografía en Costa Rica.",
+  title: `${siteConfig.name} | Servicios de Topografía`,
+  description: siteConfig.description,
+  metadataBase: new URL(siteConfig.url),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

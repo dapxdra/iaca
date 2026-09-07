@@ -1,10 +1,13 @@
+import { dashboardPages } from "@/config/site";
+
+const content = dashboardPages.clientes;
+
 export default function ClientesPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Clientes</h1>
+    <div data-cy="page-clientes">
+      <h1 className="text-2xl font-semibold">{content.title}</h1>
       <p className="mt-2 text-sm text-foreground/70">
-        Control de clientes (personas físicas y jurídicas) y su historial de proyectos.
-        Ver <code>docs/REQUIREMENTS.md</code> sección 4.1.
+        {content.description} Ver <code>{content.docsRef}</code>.
       </p>
     </div>
   );
