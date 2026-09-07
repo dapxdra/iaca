@@ -1,69 +1,68 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+const servicios = [
+  {
+    titulo: "Levantamientos topográficos",
+    detalle:
+      "Captura de puntos en campo con equipo especializado, referenciados a CR-SIRGAS (CRTM05).",
+  },
+  {
+    titulo: "Agrimensura y amojonamiento",
+    detalle: "Medición, cálculo y demarcación de linderos según normativa del Catastro Nacional.",
+  },
+  {
+    titulo: "Curvas de nivel y modelado de terreno",
+    detalle: "Procesamiento de datos de campo para planos topográficos y estudios de sitio.",
+  },
+  {
+    titulo: "Trámites ante entidades",
+    detalle:
+      "Gestión y seguimiento de planos y documentos ante Catastro Nacional, municipalidades y otras entidades.",
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="flex-1">
+      <header className="border-b border-black/10 dark:border-white/10">
+        <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <span className="text-lg font-semibold tracking-tight">IACA</span>
+          <Link
+            href="/login"
+            className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background"
+          >
+            Acceso interno
+          </Link>
+        </nav>
+      </header>
+
+      <main>
+        <section className="mx-auto max-w-5xl px-6 py-20 text-center">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+            Servicios de topografía en Costa Rica
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mx-auto mt-4 max-w-2xl text-balance text-base text-foreground/70">
+            Levantamientos, cálculo, dibujo y trámites topográficos, referenciados al
+            sistema oficial CR-SIRGAS.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        </section>
+
+        <section className="mx-auto grid max-w-5xl gap-6 px-6 pb-20 sm:grid-cols-2">
+          {servicios.map((s) => (
+            <article
+              key={s.titulo}
+              className="rounded-lg border border-black/10 p-6 dark:border-white/10"
+            >
+              <h2 className="font-semibold">{s.titulo}</h2>
+              <p className="mt-2 text-sm text-foreground/70">{s.detalle}</p>
+            </article>
+          ))}
+        </section>
       </main>
+
+      <footer className="border-t border-black/10 px-6 py-8 text-center text-sm text-foreground/60 dark:border-white/10">
+        IACA — Servicios de topografía
+      </footer>
     </div>
   );
 }
