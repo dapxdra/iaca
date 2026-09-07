@@ -5,7 +5,7 @@ export default function LoginPage() {
         <h1 className="text-xl font-semibold">Acceso interno IACA</h1>
         <p className="mt-2 text-sm text-foreground/70">
           Formulario de inicio de sesión con Supabase Auth (correo/contraseña o magic
-          link). Ver <code>docs/REQUIREMENTS.md</code> sección 5.
+          link). Ver <code>docs/REQUIREMENTS.md</code> sección 6.
         </p>
       </div>
     </div>
