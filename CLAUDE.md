@@ -4,6 +4,15 @@ Plataforma Next.js (App Router) + Supabase para una empresa de topografía en Co
 Ver [README.md](./README.md) para el stack y [docs/REQUIREMENTS.md](./docs/REQUIREMENTS.md)
 para el alcance funcional.
 
+## Diseño visual
+
+Antes de tocar cualquier UI, leer [design-system/MASTER.md](./design-system/MASTER.md):
+paleta de marca (con contraste WCAG ya verificado), tipografía (Libre Bodoni + Public
+Sans), escala de tamaños (H1 64px / H2 40px / H3 28px / Body 18px / Small 14px) y qué
+patrón de layout usa cada tipo de página. Generado con la skill `ui-ux-pro-max`
+(`.claude/skills/ui-ux-pro-max/`) — consultar sus datasets CSV directamente para dudas de
+estilo/tipografía/UX que no cubra el Master (no requieren Python).
+
 ## Arquitectura (SOA por capas)
 
 ```

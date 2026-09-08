@@ -4,15 +4,19 @@ import { signOutAction } from "./actions";
 
 /**
  * Layout del área interna. La protección de sesión y redirección a /login
- * ocurre en el middleware de la raíz (src/lib/supabase/middleware.ts), no
- * aquí — así todas las rutas del dashboard quedan cubiertas sin repetir la
- * verificación en cada page.tsx.
+ * ocurre en el proxy de la raíz (src/proxy.ts), no aquí — así todas las
+ * rutas del dashboard quedan cubiertas sin repetir la verificación en cada
+ * page.tsx.
+ *
+ * Sidebar en tinta (--color-ink) sobre contenido en papel (--color-paper):
+ * separa visualmente "herramienta de trabajo" de "documento/dato", patrón
+ * de dashboards densos (ver design-system/MASTER.md).
  */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-black/10 p-4 dark:border-white/10">
-        <div data-cy="site-name" className="mb-6 text-lg font-semibold">
+    <div className="flex min-h-screen bg-background">
+      <aside className="flex w-56 shrink-0 flex-col bg-ink p-4 text-paper">
+        <div data-cy="site-name" className="mb-6 text-h3 font-semibold">
           {siteConfig.name}
         </div>
         <nav data-cy="dashboard-nav" className="flex flex-1 flex-col gap-1">
@@ -21,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               key={item.key}
               href={item.href}
               data-cy={`nav-${item.key}`}
-              className="rounded-md px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+              className="cursor-pointer px-3 py-2 text-small font-medium text-paper/80 transition-colors duration-200 hover:bg-white/5 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
             >
               {item.label}
             </Link>
@@ -31,13 +35,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             type="submit"
             data-cy="sign-out"
-            className="w-full rounded-md px-3 py-2 text-left text-sm text-foreground/70 hover:bg-black/5 dark:hover:bg-white/10"
+            className="w-full cursor-pointer px-3 py-2 text-left text-small font-medium text-paper/60 transition-colors duration-200 hover:bg-white/5 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper"
           >
             {authContent.signOutLabel}
           </button>
         </form>
       </aside>
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 p-8">{children}</main>
     </div>
   );
 }

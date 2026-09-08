@@ -112,6 +112,7 @@ src/
     (auth)/login/                → login (Server Action + validación con zod)
     (dashboard)/                 → área interna (requiere sesión, protegida por middleware)
       proyectos/
+      cobros/
       clientes/
       bitacora/
       tramites/
@@ -119,6 +120,7 @@ src/
   services/                      → capa de lógica de negocio (patrón SOA, ver CLAUDE.md)
     auth.service.ts               → login/logout
     clientes.service.ts           → ejemplo de referencia para servicios por entidad
+    cobros.service.ts             → monto a cobrar, pagos y saldo pendiente por proyecto
   lib/
     supabase/
       client.ts                  → cliente de Supabase para componentes de navegador
@@ -128,9 +130,10 @@ src/
     database.ts                   → tipos generados desde el esquema de Supabase
 supabase/
   migrations/
-    0001_init.sql              → esquema completo: clientes, proyectos, subproyectos,
+    0001_init.sql              → esquema base: clientes, proyectos, subproyectos,
                                   puntos topográficos, archivos, bitácora, trámites,
                                   vistas de KPI y políticas RLS base
+    0002_cobros.sql            → monto a cobrar, tabla de pagos, vista de saldo pendiente
 docs/
   REQUIREMENTS.md               → documento de requerimientos completo
   PROPUESTA-TECNICA-Y-COSTOS.md → stack técnico y estimación de costos
@@ -153,9 +156,11 @@ ver [`CLAUDE.md`](./CLAUDE.md).
 7. Implementar la importación de CSV de MapIt hacia `puntos_topograficos`.
 8. Implementar **Trámites gubernamentales** + la alerta de días sin revisión
    (`vw_tramites_sin_revision` ya está creada en la base de datos).
-9. Implementar **Reportes KPI** usando las vistas `vw_kpi_proyecto` y `vw_kpi_zona`.
-10. Integrar el mapa de Google Maps en la ficha de proyecto.
-11. Pulir el sitio informativo público y desplegar a producción.
+9. Implementar **Control de cobro**: definir monto a cobrar por proyecto y registrar pagos
+   (`vw_cobros_proyecto` ya está creada; ver `src/services/cobros.service.ts`).
+10. Implementar **Reportes KPI** usando las vistas `vw_kpi_proyecto` y `vw_kpi_zona`.
+11. Integrar el mapa de Google Maps en la ficha de proyecto.
+12. Pulir el sitio informativo público y desplegar a producción.
 
 ## Scripts disponibles
 

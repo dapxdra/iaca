@@ -21,10 +21,25 @@ export type DashboardNavItem = {
   label: string;
 };
 
+export type NavItem = {
+  key: string;
+  href: string;
+  label: string;
+};
+
+// Ancla a cada <section id="..."> del sitio público (src/app/page.tsx).
+export const publicNav: NavItem[] = [
+  { key: "servicios", href: "#servicios", label: "Servicios" },
+  { key: "proceso", href: "#proceso", label: "Proceso" },
+  { key: "confianza", href: "#confianza", label: "Nosotros" },
+  { key: "contacto", href: "#contacto", label: "Contacto" },
+];
+
 // El primer elemento es el destino por defecto tras iniciar sesión y al
 // visitar /login ya autenticado (ver src/lib/supabase/middleware.ts).
 export const dashboardNav: DashboardNavItem[] = [
   { key: "proyectos", href: "/proyectos", label: "Proyectos" },
+  { key: "cobros", href: "/cobros", label: "Cobros" },
   { key: "clientes", href: "/clientes", label: "Clientes" },
   { key: "bitacora", href: "/bitacora", label: "Bitácora de campo" },
   { key: "tramites", href: "/tramites", label: "Trámites" },
@@ -46,6 +61,12 @@ export const dashboardPages: Record<string, DashboardPageContent> = {
     description:
       "Listado de proyectos y subproyectos con filtros por ID, cliente, zona y estado (Contacto → Campo → Cálculo → Dibujo → Entrega).",
     docsRef: "docs/REQUIREMENTS.md sección 4.2",
+  },
+  cobros: {
+    title: "Cobros",
+    description:
+      "Monto a cobrar y pagos registrados por proyecto, con saldo pendiente calculado automáticamente. Registro interno, no genera comprobantes fiscales.",
+    docsRef: "docs/REQUIREMENTS.md sección 4.10",
   },
   clientes: {
     title: "Clientes",
@@ -74,7 +95,8 @@ export const dashboardPages: Record<string, DashboardPageContent> = {
 };
 
 export const homeContent = {
-  ctaLabel: "Acceso interno",
+  loginLabel: "Acceso interno",
+  contactCtaLabel: "Contáctanos",
   heroTitle: "Servicios de topografía en Costa Rica",
   heroSubtitle:
     "Levantamientos, cálculo, dibujo y trámites topográficos, referenciados al sistema oficial CR-SIRGAS.",
@@ -105,6 +127,68 @@ export const homeContent = {
     },
   ],
 } as const;
+
+// Flujo real de trabajo (docs/REQUIREMENTS.md sección 5), mostrado como
+// línea de tiempo en la sección "Proceso" del sitio público.
+export const processSteps = [
+  {
+    key: "contacto",
+    titulo: "Contacto",
+    detalle: "Se registra el cliente y los datos iniciales de la solicitud.",
+  },
+  {
+    key: "campo",
+    titulo: "Campo",
+    detalle: "Se agenda y ejecuta el levantamiento en sitio.",
+  },
+  {
+    key: "calculo",
+    titulo: "Cálculo",
+    detalle: "La oficina procesa los datos topográficos capturados.",
+  },
+  {
+    key: "dibujo",
+    titulo: "Dibujo",
+    detalle: "Se elabora el plano o entregable final.",
+  },
+  {
+    key: "entrega",
+    titulo: "Entrega",
+    detalle: "Se entrega al cliente y, si aplica, se tramita ante entidades.",
+  },
+] as const;
+
+export const confianzaContent = {
+  heading: "Precisión con respaldo técnico",
+  description:
+    "Cada levantamiento se referencia al sistema geodésico oficial de Costa Rica, y cada trámite se le da seguimiento hasta su cierre.",
+  // Hechos verificables del dominio — nunca cifras o testimonios inventados
+  // (ver design-system/MASTER.md).
+  signals: [
+    "Referenciado a CR-SIRGAS (CRTM05)",
+    "Trámites ante Catastro Nacional",
+    "Cobertura nacional",
+  ],
+} as const;
+
+// Único canal de contacto confirmado por el cliente (WhatsApp). No agregar
+// correo/dirección física aquí hasta que el cliente los confirme — ver
+// docs/REQUIREMENTS.md sección 12.
+export const contactContent = {
+  heading: "Contacto",
+  description: "Escríbenos por WhatsApp para agendar un levantamiento o resolver dudas.",
+  whatsapp: {
+    /** Número en formato E.164 sin "+", como lo requiere la URL de wa.me. */
+    phoneE164: "50670563640",
+    displayNumber: "+506 7056-3640",
+    prefilledMessage: "Hola, quisiera más información sobre sus servicios de topografía.",
+  },
+} as const;
+
+export function buildWhatsAppUrl(message: string = contactContent.whatsapp.prefilledMessage) {
+  const params = new URLSearchParams({ text: message });
+  return `https://wa.me/${contactContent.whatsapp.phoneE164}?${params.toString()}`;
+}
 
 export const authContent = {
   title: `Acceso interno ${siteConfig.name}`,

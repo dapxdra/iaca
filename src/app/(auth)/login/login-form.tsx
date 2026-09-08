@@ -9,8 +9,8 @@ export function LoginForm() {
 
   return (
     <form action={formAction} data-cy="login-form" className="mt-6 flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="email" className="text-small font-medium text-foreground">
           {authContent.emailLabel}
         </label>
         <input
@@ -20,12 +20,12 @@ export function LoginForm() {
           required
           autoComplete="email"
           data-cy="login-email"
-          className="rounded-md border border-black/10 px-3 py-2 text-sm dark:border-white/10"
+          className="border border-border bg-background px-3 py-2.5 text-body text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm font-medium">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className="text-small font-medium text-foreground">
           {authContent.passwordLabel}
         </label>
         <input
@@ -36,12 +36,12 @@ export function LoginForm() {
           minLength={8}
           autoComplete="current-password"
           data-cy="login-password"
-          className="rounded-md border border-black/10 px-3 py-2 text-sm dark:border-white/10"
+          className="border border-border bg-background px-3 py-2.5 text-body text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
         />
       </div>
 
       {state && !state.success && (
-        <p role="alert" data-cy="login-error" className="text-sm text-red-600">
+        <p role="alert" data-cy="login-error" className="text-small font-medium text-red-600">
           {state.error}
         </p>
       )}
@@ -50,7 +50,7 @@ export function LoginForm() {
         type="submit"
         disabled={isPending}
         data-cy="login-submit"
-        className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-60"
+        className="mt-2 cursor-pointer bg-primary px-4 py-2.5 text-small font-semibold text-primary-foreground transition-colors duration-200 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? authContent.submitPendingLabel : authContent.submitLabel}
       </button>

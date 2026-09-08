@@ -12,7 +12,7 @@
 IACA es una plataforma con dos caras:
 
 1. **Sitio informativo público** — presenta los servicios de topografía de la empresa (levantamientos, agrimensura, curvas de nivel, trámites, etc.) a potenciales clientes.
-2. **Aplicación interna de gestión** — controla todo el ciclo de vida de un proyecto de topografía: desde el primer contacto con el cliente hasta la entrega final, pasando por campo, cálculo y dibujo, incluyendo la bitácora de los trabajadores de campo, los datos topográficos crudos (coordenadas, CSV, DWG), los trámites ante entidades gubernamentales y los reportes de KPI.
+2. **Aplicación interna de gestión** — controla todo el ciclo de vida de un proyecto de topografía: desde el primer contacto con el cliente hasta la entrega final, pasando por campo, cálculo y dibujo, incluyendo la bitácora de los trabajadores de campo, los datos topográficos crudos (coordenadas, CSV, DWG), los trámites ante entidades gubernamentales, el control de cobro y los reportes de KPI.
 
 El sistema se rige por el sistema de referencia geodésico oficial de Costa Rica, **CR-SIRGAS (CRTM05)**, y debe integrarse con las herramientas que el equipo ya usa en campo (GPS, estación total, y la app **MapIt**, que exporta datos en CSV o PostgreSQL).
 
@@ -29,7 +29,7 @@ El sistema se rige por el sistema de referencia geodésico oficial de Costa Rica
 | Rol | Descripción | Acceso típico |
 |---|---|---|
 | **Administrador** | Dueño/gerente de la empresa | Acceso total: clientes, proyectos, trámites, KPI, usuarios |
-| **Oficina (cálculo/dibujo)** | Personal que procesa datos, calcula y dibuja planos | Proyectos, subproyectos, archivos, trámites |
+| **Oficina (cálculo/dibujo)** | Personal que procesa datos, calcula y dibuja planos | Proyectos, subproyectos, archivos, trámites, cobros |
 | **Campo** | Topógrafos/cadeneros en sitio | Bitácora de campo, carga de fotos, consulta de proyectos asignados |
 | **Cliente** *(opcional, fase futura)* | Cliente final | Portal de solo lectura con el estado de su(s) proyecto(s) |
 | **Visitante público** | Cualquier persona | Solo el sitio informativo (sin login) |
@@ -94,6 +94,14 @@ El sistema se rige por el sistema de referencia geodésico oficial de Costa Rica
 - Landing page con los servicios que ofrece la empresa, información de contacto y, opcionalmente, un formulario de contacto que genere automáticamente un cliente/proyecto en estado "Contacto" dentro del sistema interno.
 - No requiere autenticación.
 
+### 4.10 Control de cobro
+
+- Cada proyecto tiene un **monto total a cobrar** (se define cuando el proyecto ya está cotizado; puede quedar sin definir mientras tanto).
+- Se registran los **pagos/abonos** recibidos contra ese monto: fecha, monto, método de pago (efectivo, SINPE móvil, transferencia, cheque, otro) y notas opcionales.
+- El sistema calcula el **saldo pendiente** por proyecto en tiempo real (monto a cobrar menos la suma de pagos registrados) — no se almacena, para que nunca quede desactualizado.
+- Es un **registro interno** de control de cobro. No genera comprobantes fiscales (factura electrónica ante el Ministerio de Hacienda) ni cotizaciones formales — ver sección 11.
+- Acceso de escritura (registrar pagos, definir monto a cobrar) solo para roles `admin` y `oficina`, igual que clientes y proyectos.
+
 ## 5. Flujo de trabajo y estados
 
 El ciclo de vida de todo proyecto sigue estos estados, en orden:
@@ -157,7 +165,7 @@ El sistema debe dejar claro en la interfaz cuál es cuál, y nunca mezclar ambos
 - Sincronización offline completa para trabajo de campo sin señal.
 - Integración automática (vía API) con los sistemas de Catastro Nacional u otras entidades.
 - Firma digital de documentos dentro de la plataforma.
-- Facturación / cotizaciones integradas.
+- Facturación electrónica (comprobantes fiscales ante el Ministerio de Hacienda) y cotizaciones formales integradas — el **control de cobro interno** (registro de monto a cobrar y pagos, sección 4.10) sí está dentro del MVP.
 
 ## 12. Supuestos y preguntas abiertas para validar con el cliente
 
