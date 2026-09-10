@@ -98,69 +98,80 @@ git push -u origin main
    Environment Variables**.
 3. Deploy. Cada push a `main` (y cada PR) generará su propio despliegue automáticamente.
 
+## Estado actual (MVP)
+
+Implementado y probado contra la base de datos real:
+
+| Módulo | Estado |
+|---|---|
+| Login + sesión (Supabase Auth, proxy de rutas) | ✅ |
+| Perfil automático al registrarse + rol por RLS (`admin`/`oficina`/`campo`) | ✅ |
+| **Clientes** — CRUD + búsqueda | ✅ |
+| **Proyectos** — CRUD, filtros, código autogenerado, ficha de detalle | ✅ |
+| Flujo de estados Contacto→Campo→Cálculo→Dibujo→Entrega (+ transiciones válidas) | ✅ |
+| **Subproyectos** — alta/baja desde la ficha del proyecto | ✅ |
+| **Bitácora de campo** — alta/listado (rol `campo` solo sus entradas) | ✅ |
+| **Trámites** — CRUD + panel de alertas "sin revisión hace N días" | ✅ |
+| **Cobros** — definir monto, registrar/eliminar pagos, saldo automático | ✅ |
+| **Reportes KPI** — tarjetas, gráficos por zona, tablas | ✅ |
+| Sitio informativo público | ✅ (del scaffold) |
+
+Pendiente (siguiente fase — ver `docs/REQUIREMENTS.md` §11):
+
+- Subida de **fotos de bitácora** a Supabase Storage (buckets ya creados).
+- Importación de **CSV de MapIt** → `puntos_topograficos` (dep. `papaparse` ya instalada).
+- **Google Maps** en la ficha de proyecto (`ubicacion geography` ya está en el esquema).
+- Descarga/subida de archivos **DWG/PDF** (`archivos_proyecto` ya está en el esquema).
+- Pantalla de **gestión de usuarios** (hoy se administran desde el panel de Supabase Auth).
+- Portal de cliente externo, notificaciones por correo.
+
+### Usuario de prueba
+
+Se sembró un admin para probar de inmediato (borralo desde Supabase → Authentication →
+Users cuando ya no lo necesites, o cambiale la contraseña):
+
+```
+admin@iaca.test  /  IacaAdmin!2026
+```
+
 ## Estructura del proyecto
 
 ```
-proxy.ts                        → refresca sesión de Supabase y protege rutas del dashboard
-                                   (reemplaza a middleware.ts, deprecado en Next.js 16)
+proxy.ts                         → refresca sesión de Supabase y protege rutas del dashboard
 src/
-  config/
-    site.ts                      → toda la configuración parametrizable: nombre de la app,
-                                    textos, navegación, títulos de cada página del dashboard
-  app/
-    page.tsx                     → sitio informativo (público)
-    (auth)/login/                → login (Server Action + validación con zod)
-    (dashboard)/                 → área interna (requiere sesión, protegida por middleware)
-      proyectos/
-      cobros/
-      clientes/
-      bitacora/
-      tramites/
-      kpi/
-  services/                      → capa de lógica de negocio (patrón SOA, ver CLAUDE.md)
-    auth.service.ts               → login/logout
-    clientes.service.ts           → ejemplo de referencia para servicios por entidad
-    cobros.service.ts             → monto a cobrar, pagos y saldo pendiente por proyecto
+  config/site.ts                 → configuración parametrizable (nombre, textos, navegación)
   lib/
-    supabase/
-      client.ts                  → cliente de Supabase para componentes de navegador
-      server.ts                  → cliente de Supabase para Server Components/Actions
-      proxy.ts                   → lógica de refresco/redirección usada por proxy.ts (raíz)
-  types/
-    database.ts                   → tipos generados desde el esquema de Supabase
-supabase/
-  migrations/
-    0001_init.sql              → esquema base: clientes, proyectos, subproyectos,
-                                  puntos topográficos, archivos, bitácora, trámites,
-                                  vistas de KPI y políticas RLS base
-    0002_cobros.sql            → monto a cobrar, tabla de pagos, vista de saldo pendiente
-docs/
-  REQUIREMENTS.md               → documento de requerimientos completo
-  PROPUESTA-TECNICA-Y-COSTOS.md → stack técnico y estimación de costos
+    auth.ts                      → getSessionProfile / requireProfile / requireStaff (rol)
+    action.ts                    → makeFormAction: fábrica de Server Actions de formulario
+    form.ts                      → FormState + parseForm (validación zod → errores por campo)
+    format.ts                    → formato de colones y fechas (es-CR)
+    proyecto-flujo.ts            → flujo de estados (puro, compartible con el cliente)
+    supabase/{client,server,proxy}.ts
+  services/                      → capa de negocio (SOA): un archivo por entidad
+    auth · clientes · proyectos · bitacora · tramites · cobros · kpi · profiles
+  components/ui/                 → primitivas del design system (button, field, table,
+                                   dialog, badge, section, action-form, delete-form)
+  app/
+    page.tsx                     → sitio público
+    (auth)/login/
+    (dashboard)/
+      layout.tsx                 → sidebar + guard de sesión
+      clientes/ · proyectos/[id]/ · bitacora/ · tramites/ · cobros/[id]/ · kpi/
+        page.tsx + actions.ts ("use server") + *-dialog.tsx ("use client")
+  types/database.ts              → tipos generados desde Supabase (reales)
+supabase/migrations/
+  0001_init.sql                  → esquema base + vistas KPI + RLS placeholder
+  0002_cobros.sql                → monto a cobrar, pagos, vw_cobros_proyecto
+  0003_security_hardening.sql    → hallazgos de Supabase Advisors
+  0004_rls_and_profile_bootstrap.sql → trigger de perfil, helpers de rol, RLS definitiva,
+                                       triggers de sellado de autoría (created_by, etc.)
 ```
 
-Convenciones del proyecto (arquitectura SOA, parametrización, `data-cy`, seguridad, etc.):
-ver [`CLAUDE.md`](./CLAUDE.md).
+Convenciones (arquitectura SOA, parametrización, `data-cy`, seguridad): ver [`CLAUDE.md`](./CLAUDE.md).
 
-## Próximos pasos recomendados (en orden)
-
-1. Revisar `docs/REQUIREMENTS.md` junto con el cliente, en especial la sección 12
-   ("Supuestos y preguntas abiertas") — las respuestas pueden ajustar el alcance.
-2. Crear el proyecto de Supabase y aplicar la migración inicial (pasos 2–3 arriba).
-3. Construir el formulario de login con Supabase Auth y el middleware de sesión (la
-   página `/login` ya está creada como placeholder).
-4. Implementar el CRUD de **Clientes** (el módulo más simple, buen punto de partida).
-5. Implementar **Proyectos/Subproyectos** con el flujo de estados
-   Contacto→Campo→Cálculo→Dibujo→Entrega.
-6. Implementar **Bitácora de campo** + carga de fotos a Supabase Storage.
-7. Implementar la importación de CSV de MapIt hacia `puntos_topograficos`.
-8. Implementar **Trámites gubernamentales** + la alerta de días sin revisión
-   (`vw_tramites_sin_revision` ya está creada en la base de datos).
-9. Implementar **Control de cobro**: definir monto a cobrar por proyecto y registrar pagos
-   (`vw_cobros_proyecto` ya está creada; ver `src/services/cobros.service.ts`).
-10. Implementar **Reportes KPI** usando las vistas `vw_kpi_proyecto` y `vw_kpi_zona`.
-11. Integrar el mapa de Google Maps en la ficha de proyecto.
-12. Pulir el sitio informativo público y desplegar a producción.
+> Nota: las migraciones `0001`–`0003` se aplicaron en su momento por el SQL Editor, así que
+> `supabase migration list` solo muestra `0004` en adelante. Si adoptás la CLI de Supabase,
+> marcá las anteriores como aplicadas con `supabase migration repair`.
 
 ## Scripts disponibles
 
