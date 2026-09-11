@@ -4,7 +4,9 @@ import { Plus } from "lucide-react";
 import { FormDialog } from "@/components/ui/dialog";
 import { ActionForm } from "@/components/ui/action-form";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { FileInput } from "@/components/ui/file-input";
 import { todayISO } from "@/lib/format";
+import { MAX_CSV_POR_ENTRADA, MAX_CSV_MB, MAX_FOTOS_POR_ENTRADA, MAX_FOTO_MB } from "@/lib/uploads";
 import { createBitacoraAction } from "./actions";
 
 export function BitacoraDialog({
@@ -30,6 +32,7 @@ export function BitacoraDialog({
         <ActionForm
           action={createBitacoraAction}
           onDone={close}
+          toastTitle="Bitácora"
           submitLabel="Registrar"
           dataCy="bitacora-form"
         >
@@ -84,6 +87,23 @@ export function BitacoraDialog({
               <Field label="Observaciones" htmlFor="b-obs" error={errors.observaciones}>
                 <Textarea id="b-obs" name="observaciones" />
               </Field>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  label="Fotos"
+                  htmlFor="b-fotos"
+                  hint={`Hasta ${MAX_FOTOS_POR_ENTRADA}, máx. ${MAX_FOTO_MB} MB c/u`}
+                >
+                  <FileInput name="fotos" accept="image/jpeg,image/png,image/webp,image/heic" />
+                </Field>
+                <Field
+                  label="Archivos CSV"
+                  htmlFor="b-csv"
+                  hint={`Hasta ${MAX_CSV_POR_ENTRADA}, máx. ${MAX_CSV_MB} MB c/u`}
+                >
+                  <FileInput name="csv" accept=".csv,text/csv" />
+                </Field>
+              </div>
             </>
           )}
         </ActionForm>

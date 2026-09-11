@@ -1,13 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
-import { Trash2 } from "lucide-react";
+import { useActionState, useEffect, useRef } from "react";
+import { Loader2, Trash2 } from "lucide-react";
 import { buttonClass } from "./button";
+import { useToast } from "./toast";
 import { type FormState, idleFormState } from "@/lib/form";
 
 /**
- * Botón de borrado: pide confirmación nativa y luego dispara una Server Action
- * que recibe `id` por FormData. Icono-only en tablas; `label` opcional.
+ * Botón de borrado: confirmación nativa → Server Action (recibe `id` por
+ * FormData) → toast con el resultado. Ícono-only en tablas; `label` opcional.
  */
 export function DeleteForm({
   action,
@@ -23,6 +24,18 @@ export function DeleteForm({
   dataCy: string;
 }) {
   const [state, formAction, pending] = useActionState(action, idleFormState);
+  const toast = useToast();
+  const handled = useRef<FormState | null>(null);
+
+  useEffect(() => {
+    if (state === handled.current || state.status === "idle") return;
+    handled.current = state;
+    if (state.status === "success") {
+      toast({ tone: "success", title: "Eliminado", description: state.message });
+    } else {
+      toast({ tone: "error", title: "No se pudo eliminar", description: state.message });
+    }
+  }, [state, toast]);
 
   return (
     <form
@@ -32,7 +45,7 @@ export function DeleteForm({
           e.preventDefault();
         }
       }}
-      className="inline"
+      className="inline-flex"
     >
       <input type="hidden" name="id" value={id} />
       <button
@@ -40,10 +53,13 @@ export function DeleteForm({
         disabled={pending}
         data-cy={dataCy}
         aria-label={`Eliminar ${entityLabel}`}
-        title={state.status === "error" ? state.message : `Eliminar ${entityLabel}`}
-        className={buttonClass("danger", "sm", label ? "" : "!px-2")}
+        className={buttonClass("danger", "sm", label ? "" : "!w-8 !px-0")}
       >
-        <Trash2 className="h-4 w-4" />
+        {pending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Trash2 className="h-4 w-4" />
+        )}
         {label}
       </button>
     </form>

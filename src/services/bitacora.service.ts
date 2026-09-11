@@ -1,16 +1,22 @@
 /**
  * Servicio de Bitácora de campo. Entradas diarias por proyecto/subproyecto.
  *
- * Autorización: RLS (0004_...). admin/oficina ven y editan todo; el rol
- * `campo` solo puede crear/editar/borrar sus propias entradas (la policy
- * compara `trabajador_id` con `auth.uid()`; el trigger lo sella al insertar).
+ * Autorización: RLS (0004_.../0005_...). admin/oficina ven y editan todo; el
+ * rol `campo` ve todas las entradas (las necesita para su trabajo diario)
+ * pero solo puede crear/editar/borrar las suyas (la policy compara
+ * `trabajador_id` con `auth.uid()`; el trigger lo sella al insertar); el rol
+ * `cliente` no tiene acceso a bitácora en absoluto.
  *
- * La carga de fotos a Supabase Storage queda para la siguiente fase — ver
- * README, "Próximos pasos".
+ * Fotos: se suben a Storage desde `src/services/storage.service.ts` (llamado
+ * por la Server Action de creación, que necesita el id de la entrada recién
+ * creada) — acá solo se leen de vuelta con URL firmada.
  */
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { emptyToUndefined } from "@/lib/form";
+import { BUCKETS, getSignedUrls } from "@/services/storage.service";
+
+export type BitacoraFoto = { id: string; url: string | null; descripcion: string | null };
 
 export type BitacoraEntry = {
   id: string;
@@ -23,12 +29,17 @@ export type BitacoraEntry = {
   observaciones: string | null;
   proyecto: { id: string; codigo: string; nombre: string } | null;
   trabajador: { id: string; full_name: string } | null;
+  fotos: BitacoraFoto[];
 };
 
 const SELECT =
   "id, fecha, hora_inicio, hora_fin, actividad, equipo_utilizado, clima, observaciones, " +
   "proyecto:proyectos!bitacora_campo_proyecto_id_fkey(id, codigo, nombre), " +
-  "trabajador:profiles!bitacora_campo_trabajador_id_fkey(id, full_name)";
+  "trabajador:profiles!bitacora_campo_trabajador_id_fkey(id, full_name), " +
+  "fotos:bitacora_fotos(id, storage_path, descripcion)";
+
+type RawFoto = { id: string; storage_path: string; descripcion: string | null };
+type RawEntry = Omit<BitacoraEntry, "fotos"> & { fotos: RawFoto[] };
 
 const optionalText = z.preprocess(emptyToUndefined, z.string().trim().max(200).optional());
 const optionalTime = z.preprocess(
@@ -75,21 +86,38 @@ export async function listBitacora(opts: {
 
   const { data, error } = await query;
   if (error) throw new Error("No se pudo cargar la bitácora.");
-  return (data ?? []) as unknown as BitacoraEntry[];
+  const entries = (data ?? []) as unknown as RawEntry[];
+
+  // URLs firmadas en un solo lote (no una llamada a Storage por foto).
+  const allPaths = entries.flatMap((e) => e.fotos.map((f) => f.storage_path));
+  const urls = await getSignedUrls(BUCKETS.bitacoraFotos, allPaths);
+
+  return entries.map((e) => ({
+    ...e,
+    fotos: e.fotos.map((f) => ({
+      id: f.id,
+      descripcion: f.descripcion,
+      url: urls.get(f.storage_path) ?? null,
+    })),
+  }));
 }
 
+/** Crea la entrada y devuelve su id (lo necesita la Server Action para subir fotos/CSV). */
 export async function createBitacora(
   input: BitacoraInput,
   trabajadorId: string
-): Promise<void> {
+): Promise<string> {
   const data = bitacoraSchema.parse(input);
   const supabase = await createClient();
   // trabajador_id se pasa explícito (y además lo sella el trigger
   // stamp_bitacora_trabajador como defensa si se inserta por fuera de la app).
-  const { error } = await supabase
+  const { data: row, error } = await supabase
     .from("bitacora_campo")
-    .insert({ ...data, trabajador_id: trabajadorId });
-  if (error) throw new Error("No se pudo registrar la entrada de bitácora.");
+    .insert({ ...data, trabajador_id: trabajadorId })
+    .select("id")
+    .single();
+  if (error || !row) throw new Error("No se pudo registrar la entrada de bitácora.");
+  return row.id;
 }
 
 export async function deleteBitacora(id: string): Promise<void> {

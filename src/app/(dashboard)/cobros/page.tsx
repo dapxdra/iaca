@@ -1,15 +1,18 @@
 import Link from "next/link";
+import { ChevronRight, CircleDollarSign, Receipt, Wallet } from "lucide-react";
 import { dashboardPages } from "@/config/site";
-import { requireProfile } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { formatColones, formatDate } from "@/lib/format";
 import { listCobrosProyectos } from "@/services/cobros.service";
 import { DashboardPageHeader } from "../_components/page-header";
-import { TableWrap, Th, Td, EmptyRow } from "@/components/ui/table";
+import { TableWrap, Th, Td } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatCard } from "@/components/ui/stat-card";
 
 export const dynamic = "force-dynamic";
 
 export default async function CobrosPage() {
-  await requireProfile();
+  await requireRole(["admin", "oficina"]);
   const cobros = await listCobrosProyectos();
 
   const totalPorCobrar = cobros.reduce((s, c) => s + (c.saldo_pendiente ?? 0), 0);
@@ -17,53 +20,67 @@ export default async function CobrosPage() {
   const sinMonto = cobros.filter((c) => c.monto_cobrar === null).length;
 
   return (
-    <div data-cy="page-cobros" className="flex flex-col gap-6">
+    <div data-cy="page-cobros" className="flex animate-fade-in flex-col gap-6">
       <DashboardPageHeader content={dashboardPages.cobros} />
 
-      <dl className="grid gap-4 sm:grid-cols-3">
-        <div className="border border-border p-4">
-          <dt className="text-small text-muted-foreground">Saldo pendiente total</dt>
-          <dd className="mt-1 text-h3 font-semibold text-foreground">
-            {formatColones(totalPorCobrar)}
-          </dd>
-        </div>
-        <div className="border border-border p-4">
-          <dt className="text-small text-muted-foreground">Total cobrado</dt>
-          <dd className="mt-1 text-h3 font-semibold text-foreground">
-            {formatColones(totalPagado)}
-          </dd>
-        </div>
-        <div className="border border-border p-4">
-          <dt className="text-small text-muted-foreground">Proyectos sin monto definido</dt>
-          <dd className="mt-1 text-h3 font-semibold text-foreground">{sinMonto}</dd>
-        </div>
-      </dl>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Saldo pendiente total"
+          value={formatColones(totalPorCobrar)}
+          icon={Wallet}
+          tone="warn"
+        />
+        <StatCard
+          label="Total cobrado"
+          value={formatColones(totalPagado)}
+          icon={CircleDollarSign}
+          tone="positive"
+        />
+        <StatCard
+          label="Proyectos sin monto"
+          value={sinMonto}
+          icon={Receipt}
+          tone="neutral"
+          hint="Sin cotización cargada"
+        />
+      </div>
 
-      <TableWrap data-cy="cobros-table">
-        <thead>
-          <tr>
-            <Th>Proyecto</Th>
-            <Th className="text-right">Monto a cobrar</Th>
-            <Th className="text-right">Pagado</Th>
-            <Th className="text-right">Saldo</Th>
-            <Th>Último pago</Th>
-            <Th className="w-px" />
-          </tr>
-        </thead>
-        <tbody>
-          {cobros.length === 0 ? (
-            <EmptyRow colSpan={6}>No hay proyectos todavía.</EmptyRow>
-          ) : (
-            cobros.map((c) => (
-              <tr key={c.proyecto_id} data-cy={`cobro-row-${c.proyecto_id}`}>
+      {cobros.length === 0 ? (
+        <div className="rounded-lg border border-border bg-surface-raised shadow-sm">
+          <EmptyState
+            icon={Receipt}
+            title="No hay proyectos"
+            description="Cuando existan proyectos aparecerá acá su estado de cobro."
+          />
+        </div>
+      ) : (
+        <TableWrap data-cy="cobros-table">
+          <thead>
+            <tr>
+              <Th>Proyecto</Th>
+              <Th numeric>Monto a cobrar</Th>
+              <Th numeric>Pagado</Th>
+              <Th numeric>Saldo</Th>
+              <Th>Último pago</Th>
+              <Th className="w-0" />
+            </tr>
+          </thead>
+          <tbody>
+            {cobros.map((c) => (
+              <tr key={c.proyecto_id} data-cy={`cobro-row-${c.proyecto_id}`} className="group">
                 <Td>
-                  <span className="font-medium text-foreground">{c.codigo}</span>
+                  <span className="font-medium tabular-nums text-foreground">{c.codigo}</span>
                   <span className="block text-muted-foreground">{c.nombre}</span>
                 </Td>
-                <Td className="whitespace-nowrap text-right">{formatColones(c.monto_cobrar)}</Td>
-                <Td className="whitespace-nowrap text-right">{formatColones(c.total_pagado)}</Td>
+                <Td numeric className="whitespace-nowrap">
+                  {formatColones(c.monto_cobrar)}
+                </Td>
+                <Td numeric className="whitespace-nowrap text-muted-foreground">
+                  {formatColones(c.total_pagado)}
+                </Td>
                 <Td
-                  className={`whitespace-nowrap text-right font-semibold ${
+                  numeric
+                  className={`whitespace-nowrap font-semibold ${
                     (c.saldo_pendiente ?? 0) > 0 ? "text-foreground" : "text-green-700"
                   }`}
                 >
@@ -76,16 +93,16 @@ export default async function CobrosPage() {
                   <Link
                     href={`/cobros/${c.proyecto_id}`}
                     data-cy={`cobro-gestionar-${c.proyecto_id}`}
-                    className="whitespace-nowrap text-small text-primary underline underline-offset-2"
+                    className="inline-flex items-center gap-1 whitespace-nowrap text-small font-medium text-accent transition-all hover:underline group-hover:translate-x-0.5"
                   >
-                    Gestionar
+                    Gestionar <ChevronRight className="h-4 w-4" />
                   </Link>
                 </Td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </TableWrap>
+            ))}
+          </tbody>
+        </TableWrap>
+      )}
     </div>
   );
 }

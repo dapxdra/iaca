@@ -1,25 +1,44 @@
 @import "tailwindcss";
 
 /*
- * Sistema de diseño IACA — ver design-system/MASTER.md para el razonamiento
- * completo (paleta, tipografía, patrones de layout, contraste verificado).
- * Resumen: papel + tinta, tipografía editorial, esquinas rectas (0px) — una
- * identidad deliberadamente distinta al "SaaS genérico" (sin glassmorphism,
- * sin gradientes, sin esquinas redondeadas por defecto).
+ * Sistema de diseño IACA — ver design-system/MASTER.md para el razonamiento.
+ * Base "papel + tinta" con tipografía editorial. En esta iteración se agregó
+ * profundidad (superficies elevadas + sombras suaves), un acento índigo de la
+ * misma familia que el navy, radios pequeños (4–6px) y micro-animaciones.
+ * Todo respeta `prefers-reduced-motion`.
  */
 :root {
-  --color-ink: #1a1825; /* texto principal (modo claro) / fondo (modo oscuro) */
-  --color-navy: #262f66; /* marca primaria: acentos, CTAs, enlaces, encabezados */
-  --color-slate: #575d83; /* texto secundario, bordes, UI silenciada */
-  --color-paper: #fefeda; /* fondo principal — papel/marfil, nunca blanco puro */
+  /* Marca */
+  --color-ink: #1a1825; /* texto principal (claro) / fondo (oscuro) */
+  --color-navy: #262f66; /* CTAs primarios, encabezados de marca */
+  --color-slate: #575d83; /* texto secundario, UI silenciada */
+  --color-paper: #fefeda; /* fondo base — papel/marfil, nunca blanco puro */
 
+  /* Roles */
   --background: var(--color-paper);
   --foreground: var(--color-ink);
   --primary: var(--color-navy);
   --primary-foreground: var(--color-paper);
+  --accent: #4338ca; /* índigo: hover de enlaces, estado activo, focus */
+  --accent-foreground: #ffffff;
   --muted-foreground: var(--color-slate);
-  --border-color: color-mix(in srgb, var(--color-slate) 35%, transparent);
-  --surface: color-mix(in srgb, var(--color-navy) 5%, var(--color-paper));
+
+  /* Superficies: la "hoja" (raised) es un marfil más claro que el fondo, así
+     las tarjetas se despegan del papel incluso antes de la sombra. */
+  --surface: color-mix(in srgb, var(--color-navy) 4%, var(--color-paper));
+  --surface-raised: color-mix(in srgb, #ffffff 68%, var(--color-paper));
+  --surface-sunken: color-mix(in srgb, var(--color-navy) 8%, var(--color-paper));
+
+  --border-color: color-mix(in srgb, var(--color-slate) 32%, transparent);
+  --border-strong: color-mix(in srgb, var(--color-slate) 55%, transparent);
+  --ring: color-mix(in srgb, var(--accent) 45%, transparent);
+
+  /* Sombras: tinta con alfa muy baja, en capas — nunca gris plano. */
+  --shadow-xs: 0 1px 2px rgb(26 24 37 / 0.05);
+  --shadow-sm: 0 1px 2px rgb(26 24 37 / 0.06), 0 2px 6px -1px rgb(26 24 37 / 0.08);
+  --shadow-md: 0 2px 6px -1px rgb(26 24 37 / 0.08), 0 8px 20px -4px rgb(26 24 37 / 0.12);
+  --shadow-lg: 0 4px 12px -2px rgb(26 24 37 / 0.10), 0 18px 40px -8px rgb(26 24 37 / 0.20);
+  --shadow-focus: 0 0 0 3px var(--ring);
 }
 
 @theme inline {
@@ -27,58 +46,169 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-ink: var(--color-ink);
   --color-navy: var(--color-navy);
   --color-slate: var(--color-slate);
   --color-paper: var(--color-paper);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border-color);
+  --color-border-strong: var(--border-strong);
   --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
 
   --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-libre-bodoni), Georgia, "Times New Roman", serif;
 
-  /* Escala tipográfica de referencia (imagen de marca): H1 64 / H2 40 / H3 28
-     / Body 18 / Small 14. Cada tamaño trae su propio interlineado en Tailwind v4. */
-  --text-h1: 4rem; /* 64px — titulares hero */
+  /* Escala tipográfica de marca: H1 64 / H2 40 / H3 28 / Body 18 / Small 14. */
+  --text-h1: 4rem;
   --text-h1--line-height: 1.05;
-  --text-h2: 2.5rem; /* 40px — titulares de sección */
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: 2.5rem;
   --text-h2--line-height: 1.15;
-  --text-h3: 1.75rem; /* 28px — sub-titulares */
+  --text-h2--letter-spacing: -0.015em;
+  --text-h3: 1.75rem;
   --text-h3--line-height: 1.3;
-  --text-body: 1.125rem; /* 18px — cuerpo de texto */
+  --text-h3--letter-spacing: -0.01em;
+  --text-body: 1.125rem;
   --text-body--line-height: 1.6;
-  --text-small: 0.875rem; /* 14px — texto pequeño / captions */
+  --text-small: 0.875rem;
   --text-small--line-height: 1.5;
 
-  /* Esquinas rectas por defecto: firma visual del sistema (ver MASTER.md). */
-  --radius-none: 0px;
+  /* Radios pequeños — el sistema deja de ser 0px pero se mantiene sobrio. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* Curvas y animaciones. `emphatic` = ease-out marcado para entradas. */
+  --ease-emphatic: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --animate-fade-in: fade-in 0.2s var(--ease-standard) both;
+  --animate-rise: rise 0.32s var(--ease-emphatic) both;
+  --animate-pop: pop 0.18s var(--ease-emphatic) both;
+  --animate-slide-in: slide-in 0.24s var(--ease-emphatic) both;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: var(--color-ink);
     --foreground: var(--color-paper);
-    /* Tintes más claros de la marca para mantener 4.5:1+ de contraste sobre
-       fondo oscuro (el navy y el slate de marca, tal cual, no alcanzan). */
     --primary: #818cf8;
     --primary-foreground: var(--color-ink);
+    --accent: #a5b4fc;
+    --accent-foreground: var(--color-ink);
     --muted-foreground: #9da1be;
-    --border-color: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
-    --surface: color-mix(in srgb, white 4%, var(--color-ink));
+
+    --surface: color-mix(in srgb, #ffffff 4%, var(--color-ink));
+    --surface-raised: color-mix(in srgb, #ffffff 7%, var(--color-ink));
+    --surface-sunken: color-mix(in srgb, #000000 22%, var(--color-ink));
+
+    --border-color: color-mix(in srgb, var(--muted-foreground) 26%, transparent);
+    --border-strong: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+    --ring: color-mix(in srgb, var(--accent) 40%, transparent);
+
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.3);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px -1px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.45), 0 10px 28px -6px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 8px 24px -4px rgb(0 0 0 / 0.5), 0 24px 56px -12px rgb(0 0 0 / 0.6);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-heading);
-  letter-spacing: -0.01em;
+html {
+  scroll-behavior: smooth;
+}
+
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* En @layer base para que utilidades como `font-sans` puedan sobreescribir
+     cuando haga falta (ej. un heading puntual que deba ir en sans). */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+  }
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--foreground);
+}
+
+/* Números tabulares en toda tabla/dato — alineación vertical perfecta. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Reveal on scroll (componente <Reveal>) — mejora progresiva: el contenido
+   siempre está visible; solo se anima la entrada cuando el observer lo marca. */
+.reveal-target {
+  opacity: 1;
+}
+.reveal-target[data-reveal="in"] {
+  animation: rise 0.55s var(--ease-emphatic) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-target[data-reveal="in"] {
+    animation: none;
+  }
+}
+
+/* Utilidad de foco unificada para elementos no-nativos. */
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  box-shadow: var(--shadow-focus);
+  border-color: var(--accent);
 }

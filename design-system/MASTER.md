@@ -16,8 +16,18 @@ esquinas muy redondeadas, azul-morado genérico). Con una paleta papel + tinta
 paleta ni con el público objetivo (clientes de trámites topográficos/gubernamentales, que
 premian seriedad sobre "modernidad" superficial).
 
-Firma visual deliberada: **esquinas rectas (0px) en todo el sistema** — es lo que más
-distingue esta interfaz de una plantilla genérica de un vistazo.
+Firma visual: base **editorial "papel + tinta"** (marfil, no blanco puro; Libre Bodoni en
+titulares) con una capa de **profundidad sobria** — no es un panel plano.
+
+> **Actualización (iteración de UI):** el sistema pasó de "0px + sin sombras" a **radios
+> pequeños (4–6px, tokens `--radius-sm/md/lg/xl`)** y **sombras suaves en capas**
+> (`--shadow-xs/sm/md/lg`, tinta a alfa muy baja — nunca gris plano). Se agregó un acento
+> **índigo `#4338ca`** (misma familia que el navy) para estados activos, hover de enlaces y
+> el anillo de foco, y superficies elevadas (`--surface-raised`, marfil más claro que el
+> fondo) para que las tarjetas se despeguen. La personalidad editorial se mantiene: la
+> tipografía Bodoni en headings y la paleta marfil son las que llevan la identidad, no las
+> esquinas rectas. Micro-animaciones 150–300ms (`--ease-emphatic`), todo bajo
+> `prefers-reduced-motion`. Fuente de verdad de los tokens: `src/app/globals.css`.
 
 ## Paleta
 
@@ -85,17 +95,24 @@ no titulares grandes).
 
 ## Reglas de implementación
 
-- Esquinas: **rectas por defecto** (`rounded-*` de Tailwind no se usa salvo excepción
-  justificada). Si en algún punto se necesita una esquina redondeada, documentar el motivo
-  ahí mismo.
+- Esquinas: **radios pequeños** — `rounded-md` (6px) en controles, botones y filas;
+  `rounded-lg` (10px) en tarjetas/tablas/secciones; `rounded-xl` (14px) en modales.
+  `rounded-full` solo en píldoras (badges), avatares y el botón de WhatsApp. No usar radios
+  grandes (> 14px) ni `rounded-2xl/3xl` — ahí empieza el look "SaaS genérico".
   - **Excepción documentada**: el botón flotante de WhatsApp
-    (`src/components/whatsapp-float.tsx`) es circular (`rounded-full`) y usa el verde de
-    marca oficial `#25D366` en vez de la paleta navy/ink/slate. Un widget de chat circular
-    es una convención universal (es como WhatsApp presenta su propio widget); usar nuestra
-    paleta ahí lo haría irreconocible. También lleva `shadow-lg` para leerse como elemento
-    flotante sobre el contenido — la única sombra del sistema, y por la misma razón.
-- Bordes: hairline (`border border-border`, 1px, slate al 35% de opacidad), nunca sombras
-  pesadas — coherente con la categoría "Minimalism & Swiss Style" (`--shadow: none`).
+    (`src/components/whatsapp-float.tsx`) usa el verde de marca oficial `#25D366` en vez de
+    la paleta navy/ink/slate, porque el reconocimiento del widget depende de ese color.
+- Bordes: hairline (`border border-border`, 1px). **Profundidad** con las sombras del
+  sistema (`shadow-xs` en controles/botones, `shadow-sm` en tarjetas y tablas, `shadow-md`
+  en hover de tarjetas interactivas y stat-cards, `shadow-lg` en modales, toasts y la
+  tarjeta de login). Nunca sombras duras ni de gris plano: los tokens son tinta a alfa muy
+  baja, en capas. El fondo de tarjeta es `bg-surface-raised` (marfil más claro que el
+  fondo) para que la sombra tenga de dónde despegarse.
+- Movimiento: micro-interacciones de 150–300ms. Botones primarios/secundarios suben 1px en
+  hover (`-translate-y-px` + sombra), se hunden en `:active`. Filas de tabla resaltan con
+  `bg-surface`. Modales entran con `pop`, toasts con `slide-in`, secciones con `rise`, y el
+  contenido below-the-fold del sitio público con `<Reveal>`. Todo respeta
+  `prefers-reduced-motion` (globals.css lo neutraliza).
 - Botones/enlaces interactivos: siempre `cursor-pointer`, estado `hover` con transición de
   150-300ms, y `focus-visible:outline` visible (accesibilidad, no solo estética).
 - No usar emojis como iconos. Si se necesitan iconos, usar SVG (Heroicons/Lucide) — el

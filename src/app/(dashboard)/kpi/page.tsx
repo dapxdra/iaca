@@ -1,48 +1,55 @@
 import Link from "next/link";
+import { CalendarCheck, CheckCircle2, FolderKanban, Layers } from "lucide-react";
 import { dashboardPages } from "@/config/site";
-import { requireProfile } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { getKpiProyectos, getKpiZonas, resumirKpi } from "@/services/kpi.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { Section } from "@/components/ui/section";
+import { StatCard } from "@/components/ui/stat-card";
 import { TableWrap, Th, Td, EmptyRow } from "@/components/ui/table";
 import { EstadoProyectoBadge } from "@/components/ui/badge";
 import { ProyectosPorZonaChart, CicloPorZonaChart } from "./kpi-charts";
 
 export const dynamic = "force-dynamic";
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="border border-border p-4">
-      <div className="text-small text-muted-foreground">{label}</div>
-      <div className="mt-1 text-h3 font-semibold text-foreground">{value}</div>
-    </div>
+function EntregaTag({ v }: { v: boolean | null }) {
+  if (v === null) return <span className="text-muted-foreground">—</span>;
+  return v ? (
+    <span className="inline-flex items-center gap-1 text-small font-medium text-green-700">
+      <CheckCircle2 className="h-3.5 w-3.5" /> A tiempo
+    </span>
+  ) : (
+    <span className="text-small font-medium text-red-700">Tarde</span>
   );
 }
 
-function entregaLabel(v: boolean | null) {
-  if (v === null) return "—";
-  return v ? "A tiempo" : "Tarde";
-}
-
 export default async function KpiPage() {
-  await requireProfile();
+  await requireRole(["admin", "oficina"]);
   const [proyectos, zonas] = await Promise.all([getKpiProyectos(), getKpiZonas()]);
   const resumen = resumirKpi(proyectos);
 
   return (
-    <div data-cy="page-kpi" className="flex flex-col gap-6">
+    <div data-cy="page-kpi" className="flex animate-fade-in flex-col gap-6">
       <DashboardPageHeader content={dashboardPages.kpi} />
 
-      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Proyectos" value={resumen.totalProyectos} />
-        <Stat label="Activos" value={resumen.activos} />
-        <Stat label="Cerrados" value={resumen.cerrados} />
-        <Stat
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Proyectos" value={resumen.totalProyectos} icon={FolderKanban} />
+        <StatCard label="Activos" value={resumen.activos} icon={Layers} tone="accent" />
+        <StatCard label="Cerrados" value={resumen.cerrados} icon={CheckCircle2} tone="positive" />
+        <StatCard
           label="Cumplimiento de entrega"
           value={resumen.cumplimientoPct === null ? "—" : `${resumen.cumplimientoPct}%`}
+          icon={CalendarCheck}
+          tone={
+            resumen.cumplimientoPct === null
+              ? "neutral"
+              : resumen.cumplimientoPct >= 70
+                ? "positive"
+                : "warn"
+          }
         />
-      </dl>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Section title="Proyectos por zona" dataCy="kpi-zona">
@@ -58,10 +65,10 @@ export default async function KpiPage() {
           <thead>
             <tr>
               <Th>Zona</Th>
-              <Th className="text-right">Proyectos</Th>
-              <Th className="text-right">Activos</Th>
-              <Th className="text-right">Cerrados</Th>
-              <Th className="text-right">Ciclo prom. (días)</Th>
+              <Th numeric>Proyectos</Th>
+              <Th numeric>Activos</Th>
+              <Th numeric>Cerrados</Th>
+              <Th numeric>Ciclo prom. (días)</Th>
             </tr>
           </thead>
           <tbody>
@@ -71,13 +78,11 @@ export default async function KpiPage() {
               zonas.map((z) => (
                 <tr key={z.zona ?? "sin-zona"}>
                   <Td className="text-foreground">{z.zona ?? "Sin zona"}</Td>
-                  <Td className="text-right">{z.total_proyectos}</Td>
-                  <Td className="text-right">{z.proyectos_activos}</Td>
-                  <Td className="text-right">{z.proyectos_cerrados}</Td>
-                  <Td className="text-right">
-                    {z.promedio_dias_ciclo === null
-                      ? "—"
-                      : Math.round(z.promedio_dias_ciclo)}
+                  <Td numeric>{z.total_proyectos}</Td>
+                  <Td numeric>{z.proyectos_activos}</Td>
+                  <Td numeric>{z.proyectos_cerrados}</Td>
+                  <Td numeric>
+                    {z.promedio_dias_ciclo === null ? "—" : Math.round(z.promedio_dias_ciclo)}
                   </Td>
                 </tr>
               ))
@@ -93,9 +98,9 @@ export default async function KpiPage() {
               <Th>Código</Th>
               <Th>Zona</Th>
               <Th>Estado</Th>
-              <Th className="text-right">Subproy.</Th>
-              <Th className="text-right">Bitácora</Th>
-              <Th className="text-right">Puntos</Th>
+              <Th numeric>Subproy.</Th>
+              <Th numeric>Bitácora</Th>
+              <Th numeric>Puntos</Th>
               <Th>Entrega est.</Th>
               <Th>Entrega</Th>
             </tr>
@@ -109,22 +114,24 @@ export default async function KpiPage() {
                   <Td className="whitespace-nowrap">
                     <Link
                       href={`/proyectos/${p.proyecto_id}`}
-                      className="text-primary underline underline-offset-2"
+                      className="tabular-nums text-accent transition-colors hover:text-primary hover:underline"
                     >
                       {p.codigo}
                     </Link>
                   </Td>
-                  <Td>{p.zona ?? "—"}</Td>
+                  <Td className="text-muted-foreground">{p.zona ?? "—"}</Td>
                   <Td>
                     <EstadoProyectoBadge estado={p.estado} />
                   </Td>
-                  <Td className="text-right">{p.total_subproyectos}</Td>
-                  <Td className="text-right">{p.total_entradas_bitacora}</Td>
-                  <Td className="text-right">{p.total_puntos}</Td>
+                  <Td numeric>{p.total_subproyectos}</Td>
+                  <Td numeric>{p.total_entradas_bitacora}</Td>
+                  <Td numeric>{p.total_puntos}</Td>
                   <Td className="whitespace-nowrap text-muted-foreground">
                     {formatDate(p.fecha_estimada_entrega)}
                   </Td>
-                  <Td className="whitespace-nowrap">{entregaLabel(p.entregado_a_tiempo)}</Td>
+                  <Td>
+                    <EntregaTag v={p.entregado_a_tiempo} />
+                  </Td>
                 </tr>
               ))
             )}

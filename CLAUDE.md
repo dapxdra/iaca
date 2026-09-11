@@ -40,8 +40,16 @@ Todo texto visible al usuario (nombre de la app, títulos de página, textos de 
 copys de landing/login) vive en [src/config/site.ts](./src/config/site.ts). Los componentes
 importan de ahí — nunca hardcodean strings de UI. Para renombrar la app, cambiar textos de
 menú o agregar una sección al dashboard, se edita ese archivo únicamente; no hace falta tocar
-componentes. Las rutas protegidas del middleware se derivan de `dashboardNav` en ese mismo
+componentes. Las rutas protegidas del proxy se derivan de `dashboardNav` en ese mismo
 archivo, así que agregar una entrada ahí protege la ruta automáticamente.
+
+**Roles**: qué `key` de `dashboardNav` ve cada rol (`admin`/`oficina`/`campo`/`cliente`) se
+define en `navKeysByRole`, también en `site.ts` — es la única fuente de verdad. El proxy la
+usa para redirigir si un rol pide una ruta ajena, la sidebar para renderizar solo lo suyo, y
+`requireRole()` (`src/lib/auth.ts`) para la misma validación dentro de cada página. Agregar
+una pantalla nueva a un rol es una línea en `navKeysByRole`; la autorización real de los
+datos sigue viviendo en RLS (`supabase/migrations/0005_...`), esto es solo de qué se entera
+la UI.
 
 ## Reglas de código (aplican a todo el repo)
 
@@ -66,16 +74,21 @@ archivo, así que agregar una entrada ahí protege la ruta automáticamente.
    - Mensajes de error genéricos hacia el usuario en flujos de auth (nunca revelar si un
      correo existe o no); el detalle real solo se registra en el servidor.
    - La autorización real vive en las políticas RLS de Postgres
-     (`supabase/migrations/0001_init.sql`); el middleware y las validaciones de la app son una
-     segunda capa de defensa, no la única.
+     (`supabase/migrations/0005_roles_access_and_storage.sql`); el proxy y las validaciones
+     de la app son una segunda capa de defensa, no la única — cada rol tiene su propia
+     política de lectura/escritura por tabla (ver esa migración para el detalle completo).
+   - Los buckets de Storage (`bitacora-fotos`, `archivos-proyecto`) son privados; nunca se
+     expone una URL pública — toda lectura pasa por `getSignedUrls()`
+     (`src/services/storage.service.ts`), que expiran en 1 hora.
 
 ## Proxy de sesión (antes "middleware")
 
 `proxy.ts` (raíz) + [src/lib/supabase/proxy.ts](./src/lib/supabase/proxy.ts) refrescan la
-sesión de Supabase en cada request y redirigen: sin sesión → `/login` si la ruta está en
-`dashboardNav`; con sesión → la primera ruta del dashboard si se visita `/login`. Si las
-variables de entorno de Supabase no están configuradas todavía (ver README paso 3), no se
-bloquea la app — se deja pasar sin verificar sesión.
+sesión de Supabase en cada request y redirigen por rol: sin sesión → `/login` si la ruta
+está en `dashboardNav`; con sesión → la home de SU rol si visita `/login` o pide una ruta que
+no le corresponde (`navKeysByRole`, ver arriba). Si las variables de entorno de Supabase no
+están configuradas todavía (ver README paso 3), no se bloquea la app — se deja pasar sin
+verificar sesión.
 
 Nota: Next.js 16 deprecó el archivo `middleware.ts` y lo renombró a `proxy.ts` (misma
 funcionalidad, cambia el nombre del archivo raíz y de la función exportada, que ahora se llama

@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 
 /**
- * Campo de búsqueda que sincroniza su valor con un query param de la URL
- * (con debounce). El listado es un Server Component que lee ese param, así
- * que al cambiar se re-renderiza desde el servidor sin estado cliente extra.
+ * Campo de búsqueda que sincroniza su valor con un query param (con debounce).
+ * El listado es un Server Component que lee ese param y se re-renderiza; el
+ * spinner aparece mientras dura la transición.
  */
 export function SearchField({
   paramName = "q",
@@ -22,7 +22,7 @@ export function SearchField({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [value, setValue] = useState(searchParams.get(paramName) ?? "");
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     const current = searchParams.get(paramName) ?? "";
@@ -40,15 +40,31 @@ export function SearchField({
 
   return (
     <div className="relative w-full max-w-xs">
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+        {isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Search className="h-4 w-4" />
+        )}
+      </span>
       <input
         type="search"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
         data-cy={dataCy}
-        className="w-full border border-border bg-background py-2 pl-9 pr-3 text-small text-foreground outline-none transition-colors duration-150 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="w-full rounded-md border border-border bg-surface-raised py-2 pl-9 pr-9 text-small text-foreground shadow-xs outline-none transition-[border-color,box-shadow] duration-150 hover:border-border-strong focus-visible:border-accent focus-visible:shadow-[0_0_0_3px_var(--ring)] [&::-webkit-search-cancel-button]:hidden"
       />
+      {value && (
+        <button
+          type="button"
+          onClick={() => setValue("")}
+          aria-label="Limpiar búsqueda"
+          className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-ring"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   );
 }

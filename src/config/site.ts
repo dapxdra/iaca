@@ -35,8 +35,16 @@ export const publicNav: NavItem[] = [
   { key: "contacto", href: "#contacto", label: "Contacto" },
 ];
 
-// El primer elemento es el destino por defecto tras iniciar sesión y al
-// visitar /login ya autenticado (ver src/lib/supabase/middleware.ts).
+/**
+ * Roles del sistema (docs/REQUIREMENTS.md sección 3). Se repite acá como
+ * unión de strings (en vez de importar el enum de Supabase) para que
+ * `config/site.ts` no dependa de `types/database` — es config pura.
+ */
+export type UserRole = "admin" | "oficina" | "campo" | "cliente";
+
+// Lista completa: define todas las rutas protegidas del dashboard (el proxy
+// las usa para saber qué proteger), independientemente de quién las vea en
+// su sidebar — eso lo decide `navKeysByRole` de abajo.
 export const dashboardNav: DashboardNavItem[] = [
   { key: "proyectos", href: "/proyectos", label: "Proyectos" },
   { key: "cobros", href: "/cobros", label: "Cobros" },
@@ -44,9 +52,35 @@ export const dashboardNav: DashboardNavItem[] = [
   { key: "bitacora", href: "/bitacora", label: "Bitácora de campo" },
   { key: "tramites", href: "/tramites", label: "Trámites" },
   { key: "kpi", href: "/kpi", label: "Reportes KPI" },
+  { key: "mis-proyectos", href: "/mis-proyectos", label: "Mis proyectos" },
 ];
 
-export const defaultDashboardRoute = dashboardNav[0].href;
+/**
+ * Qué `key` de `dashboardNav` ve cada rol en su sidebar, y a qué rutas puede
+ * entrar (el proxy y cada página lo validan — ver `src/lib/auth.ts`).
+ * Único lugar que hay que tocar para cambiar el alcance de un rol.
+ */
+export const navKeysByRole: Record<UserRole, string[]> = {
+  admin: ["proyectos", "cobros", "clientes", "bitacora", "tramites", "kpi"],
+  oficina: ["proyectos", "cobros", "clientes", "bitacora", "tramites", "kpi"],
+  // Campo solo hace bitácora de campo (docs/REQUIREMENTS.md sección 3).
+  campo: ["bitacora"],
+  // Cliente es de solo lectura sobre sus propios proyectos.
+  cliente: ["mis-proyectos"],
+};
+
+export function dashboardNavForRole(role: UserRole): DashboardNavItem[] {
+  const allowed = new Set(navKeysByRole[role]);
+  return dashboardNav.filter((item) => allowed.has(item.key));
+}
+
+/** Página a la que se manda a cada rol tras iniciar sesión (y desde /login ya autenticado). */
+export function defaultRouteForRole(role: UserRole): string {
+  return dashboardNavForRole(role)[0]?.href ?? "/login";
+}
+
+// Usado por el proxy antes de conocer el rol (ver src/lib/supabase/proxy.ts).
+export const defaultDashboardRoute = dashboardNavForRole("admin")[0].href;
 
 export type DashboardPageContent = {
   title: string;
@@ -91,6 +125,12 @@ export const dashboardPages: Record<string, DashboardPageContent> = {
     description:
       "Indicadores por proyecto, zona y trabajador (tiempos de ciclo, proyectos a tiempo, volumen por zona).",
     docsRef: "docs/REQUIREMENTS.md sección 4.6",
+  },
+  "mis-proyectos": {
+    title: "Mis proyectos",
+    description:
+      "Seguimiento de tus proyectos con IACA: estado actual y fechas. Vista de solo lectura.",
+    docsRef: "docs/REQUIREMENTS.md sección 3 (rol cliente)",
   },
 };
 

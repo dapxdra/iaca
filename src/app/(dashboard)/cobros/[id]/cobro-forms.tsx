@@ -1,24 +1,25 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
+import { useToast } from "@/components/ui/toast";
 import { idleFormState, type FormState } from "@/lib/form";
 import { todayISO } from "@/lib/format";
 import { setMontoCobrarAction, registrarPagoAction } from "../actions";
 
-function FormFeedback({ state, dataCy }: { state: FormState; dataCy: string }) {
-  if (state.status === "idle") return null;
-  const ok = state.status === "success";
-  return (
-    <p
-      role={ok ? "status" : "alert"}
-      data-cy={dataCy}
-      className={`text-small font-medium ${ok ? "text-green-700" : "text-red-700"}`}
-    >
-      {state.status === "success" ? (state.message ?? "Listo.") : state.message}
-    </p>
-  );
+function useActionToast(state: FormState, okTitle: string) {
+  const toast = useToast();
+  const handled = useRef<FormState | null>(null);
+  useEffect(() => {
+    if (state === handled.current || state.status === "idle") return;
+    handled.current = state;
+    if (state.status === "success") {
+      toast({ tone: "success", title: okTitle, description: state.message });
+    } else if (!state.fieldErrors) {
+      toast({ tone: "error", title: "Error", description: state.message });
+    }
+  }, [state, toast, okTitle]);
 }
 
 export function MontoCobrarForm({
@@ -29,45 +30,59 @@ export function MontoCobrarForm({
   montoActual: number | null;
 }) {
   const [state, formAction, pending] = useActionState(setMontoCobrarAction, idleFormState);
+  useActionToast(state, "Monto actualizado");
   const fieldError = state.status === "error" ? state.fieldErrors?.montoCobrar : undefined;
 
   return (
     <form action={formAction} data-cy="monto-form" className="flex flex-wrap items-end gap-3">
       <input type="hidden" name="proyectoId" value={proyectoId} />
-      <Field label="Monto a cobrar (₡)" htmlFor="montoCobrar" error={fieldError} hint="Vacío = sin definir">
+      <Field
+        label="Monto a cobrar (₡)"
+        htmlFor="montoCobrar"
+        error={fieldError}
+        hint="Vacío = sin definir"
+      >
         <Input
           id="montoCobrar"
           name="montoCobrar"
           type="number"
           min="0"
           step="0.01"
+          inputMode="decimal"
           defaultValue={montoActual ?? ""}
-          className="w-48"
+          className="w-52 tabular-nums"
         />
       </Field>
-      <Button type="submit" size="sm" disabled={pending} data-cy="monto-submit">
-        {pending ? "Guardando…" : "Guardar monto"}
+      <Button type="submit" loading={pending} data-cy="monto-submit">
+        Guardar monto
       </Button>
-      <div className="w-full">
-        <FormFeedback state={state} dataCy="monto-feedback" />
-      </div>
     </form>
   );
 }
 
 export function RegistrarPagoForm({ proyectoId }: { proyectoId: string }) {
   const [state, formAction, pending] = useActionState(registrarPagoAction, idleFormState);
+  useActionToast(state, "Pago registrado");
   const errs = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
     <form
       action={formAction}
       data-cy="pago-form"
-      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end"
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-start"
     >
       <input type="hidden" name="proyectoId" value={proyectoId} />
       <Field label="Monto (₡)" htmlFor="monto" required error={errs.monto}>
-        <Input id="monto" name="monto" type="number" min="0" step="0.01" required />
+        <Input
+          id="monto"
+          name="monto"
+          type="number"
+          min="0"
+          step="0.01"
+          inputMode="decimal"
+          className="tabular-nums"
+          required
+        />
       </Field>
       <Field label="Fecha" htmlFor="fechaPago" required error={errs.fechaPago}>
         <Input id="fechaPago" name="fechaPago" type="date" defaultValue={todayISO()} required />
@@ -85,12 +100,9 @@ export function RegistrarPagoForm({ proyectoId }: { proyectoId: string }) {
         <Input id="notas" name="notas" />
       </Field>
       <div className="lg:col-span-4">
-        <Button type="submit" size="sm" disabled={pending} data-cy="pago-submit">
-          {pending ? "Registrando…" : "Registrar pago"}
+        <Button type="submit" loading={pending} data-cy="pago-submit">
+          Registrar pago
         </Button>
-        <div className="mt-2">
-          <FormFeedback state={state} dataCy="pago-feedback" />
-        </div>
       </div>
     </form>
   );

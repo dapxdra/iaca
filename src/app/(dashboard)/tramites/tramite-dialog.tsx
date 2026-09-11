@@ -48,6 +48,7 @@ export function TramiteDialog({
         <ActionForm
           action={isEdit ? updateTramiteAction : createTramiteAction}
           onDone={close}
+          toastTitle="Trámite"
           submitLabel={isEdit ? "Guardar cambios" : "Registrar"}
           dataCy="tramite-form"
         >

@@ -24,6 +24,7 @@ export function SubproyectoDialog({ proyectoId }: { proyectoId: string }) {
         <ActionForm
           action={createSubproyectoAction}
           onDone={close}
+          toastTitle="Subproyecto"
           submitLabel="Agregar"
           dataCy="subproyecto-form"
         >

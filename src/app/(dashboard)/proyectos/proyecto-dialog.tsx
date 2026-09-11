@@ -49,6 +49,7 @@ export function ProyectoDialog({
         <ActionForm
           action={isEdit ? updateProyectoAction : createProyectoAction}
           onDone={close}
+          toastTitle="Proyecto"
           submitLabel={isEdit ? "Guardar cambios" : "Crear proyecto"}
           dataCy="proyecto-form"
         >

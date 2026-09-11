@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Libre_Bodoni, Public_Sans } from "next/font/google";
 import { siteConfig } from "@/config/site";
+import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
 // Par tipográfico editorial: Bodoni (personalidad, titulares) + Public Sans
@@ -33,7 +34,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es"
       className={`h-full antialiased ${libreBodoni.variable} ${publicSans.variable}`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

@@ -1,18 +1,18 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
-import { idleFormState } from "@/lib/form";
+import { useToast } from "@/components/ui/toast";
+import { idleFormState, type FormState } from "@/lib/form";
 import { PROYECTO_LABEL } from "@/components/ui/badge";
 import { transicionesValidas, type ProyectoEstado } from "@/lib/proyecto-flujo";
 import { cambiarEstadoAction } from "../actions";
 
 /**
- * Control de cambio de estado del proyecto. Solo ofrece las transiciones
- * válidas desde el estado actual (la lógica vive en el servicio y se
- * re-valida en el servidor). Si el destino es "cerrado", pide la fecha de
- * entrega real.
+ * Control de cambio de estado. Solo ofrece las transiciones válidas desde el
+ * estado actual (la lógica vive en el servicio y se re-valida en el servidor).
+ * Si el destino es "cerrado", pide la fecha de entrega real.
  */
 export function EstadoControl({
   proyectoId,
@@ -24,8 +24,22 @@ export function EstadoControl({
   tieneEntregaReal: boolean;
 }) {
   const [state, formAction, pending] = useActionState(cambiarEstadoAction, idleFormState);
-  const opciones = transicionesValidas(estadoActual);
   const [destino, setDestino] = useState<ProyectoEstado | "">("");
+  const toast = useToast();
+  const handled = useRef<FormState | null>(null);
+  const opciones = transicionesValidas(estadoActual);
+
+  useEffect(() => {
+    if (state === handled.current) return;
+    handled.current = state;
+    if (state.status === "success") {
+      // El proyecto ya cambió de estado: al re-renderizar, `estadoActual` trae
+      // el nuevo valor y `opciones` se recalcula, así que el select se limpia solo.
+      toast({ tone: "success", title: "Estado actualizado", description: state.message });
+    } else if (state.status === "error") {
+      toast({ tone: "error", title: "No se pudo cambiar", description: state.message });
+    }
+  }, [state, toast]);
 
   if (opciones.length === 0) {
     return (
@@ -47,7 +61,7 @@ export function EstadoControl({
           name="estado"
           value={destino}
           onChange={(e) => setDestino(e.target.value as ProyectoEstado)}
-          className="w-48"
+          className="w-52"
           required
         >
           <option value="" disabled>
@@ -62,7 +76,7 @@ export function EstadoControl({
       </div>
 
       {destino === "cerrado" && !tieneEntregaReal && (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex animate-fade-in flex-col gap-1.5">
           <label htmlFor="fecha_entrega_real" className="text-small font-medium text-foreground">
             Fecha de entrega real *
           </label>
@@ -76,15 +90,9 @@ export function EstadoControl({
         </div>
       )}
 
-      <Button type="submit" size="sm" disabled={pending || !destino} data-cy="estado-submit">
-        {pending ? "Aplicando…" : "Aplicar"}
+      <Button type="submit" loading={pending} disabled={!destino} data-cy="estado-submit">
+        Aplicar
       </Button>
-
-      {state.status === "error" && (
-        <p role="alert" data-cy="estado-error" className="w-full text-small font-medium text-red-700">
-          {state.message}
-        </p>
-      )}
     </form>
   );
 }

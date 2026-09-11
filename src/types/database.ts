@@ -317,6 +317,7 @@ export type Database = {
       profiles: {
         Row: {
           active: boolean
+          cliente_id: string | null
           created_at: string
           full_name: string
           id: string
@@ -325,6 +326,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          cliente_id?: string | null
           created_at?: string
           full_name: string
           id: string
@@ -333,13 +335,22 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          cliente_id?: string | null
           created_at?: string
           full_name?: string
           id?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       proyectos: {
         Row: {
@@ -961,6 +972,11 @@ export type Database = {
             }
             Returns: string
           }
+      current_user_cliente_id: { Args: never; Returns: string }
+      current_user_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
         | {
@@ -1093,6 +1109,8 @@ export type Database = {
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
       gettransactionid: { Args: never; Returns: unknown }
+      is_field_staff: { Args: never; Returns: boolean }
+      is_staff: { Args: never; Returns: boolean }
       longtransactionsenabled: { Args: never; Returns: boolean }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }

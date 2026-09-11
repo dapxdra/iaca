@@ -37,6 +37,7 @@ export function ClienteDialog({ cliente }: { cliente?: Cliente }) {
         <ActionForm
           action={isEdit ? updateClienteAction : createClienteAction}
           onDone={close}
+          toastTitle="Cliente"
           submitLabel={isEdit ? "Guardar cambios" : "Crear cliente"}
           dataCy="cliente-form"
         >

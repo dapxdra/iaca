@@ -105,58 +105,85 @@ Implementado y probado contra la base de datos real:
 | Módulo | Estado |
 |---|---|
 | Login + sesión (Supabase Auth, proxy de rutas) | ✅ |
-| Perfil automático al registrarse + rol por RLS (`admin`/`oficina`/`campo`) | ✅ |
-| **Clientes** — CRUD + búsqueda | ✅ |
-| **Proyectos** — CRUD, filtros, código autogenerado, ficha de detalle | ✅ |
+| Perfil automático al registrarse + 4 roles con pantallas propias | ✅ |
+| **Clientes** — CRUD + búsqueda (admin/oficina) | ✅ |
+| **Proyectos** — CRUD, filtros, código autogenerado, ficha de detalle (admin/oficina) | ✅ |
 | Flujo de estados Contacto→Campo→Cálculo→Dibujo→Entrega (+ transiciones válidas) | ✅ |
 | **Subproyectos** — alta/baja desde la ficha del proyecto | ✅ |
-| **Bitácora de campo** — alta/listado (rol `campo` solo sus entradas) | ✅ |
-| **Trámites** — CRUD + panel de alertas "sin revisión hace N días" | ✅ |
-| **Cobros** — definir monto, registrar/eliminar pagos, saldo automático | ✅ |
-| **Reportes KPI** — tarjetas, gráficos por zona, tablas | ✅ |
+| **Bitácora de campo** — alta/listado + adjuntar **fotos y CSV** (rol `campo`, ve todo, edita lo suyo) | ✅ |
+| **Trámites** — CRUD + panel de alertas "sin revisión hace N días" (admin/oficina) | ✅ |
+| **Cobros** — definir monto, registrar/eliminar pagos, saldo automático (admin/oficina) | ✅ |
+| **Reportes KPI** — tarjetas, gráficos por zona, tablas (admin/oficina) | ✅ |
+| **Mis proyectos** — portal de solo lectura para el rol `cliente` | ✅ |
 | Sitio informativo público | ✅ (del scaffold) |
+
+### Roles y qué ve cada uno
+
+Se define una sola vez en [`src/config/site.ts`](./src/config/site.ts) (`navKeysByRole`) y se
+aplica en 3 capas — el proxy redirige por rol, cada página vuelve a exigirlo
+(`requireRole` en `src/lib/auth.ts`), y por último RLS en Postgres es la autorización real
+(`supabase/migrations/0005_roles_access_and_storage.sql`):
+
+| Rol | Pantallas | Puede escribir |
+|---|---|---|
+| `admin` / `oficina` | Proyectos, Cobros, Clientes, Bitácora, Trámites, KPI | Todo |
+| `campo` | Solo Bitácora de campo (ve todos los proyectos para elegir en cuál registra) | Sus propias entradas de bitácora (+ adjuntar fotos/CSV) |
+| `cliente` | Solo "Mis proyectos" (sus propios proyectos, vía `profiles.cliente_id`) | Nada — de solo lectura |
+
+Escribir la URL de una pantalla ajena a mano no sirve: el proxy redirige, y aunque no
+redirigiera, RLS no devuelve las filas de otro rol.
 
 Pendiente (siguiente fase — ver `docs/REQUIREMENTS.md` §11):
 
-- Subida de **fotos de bitácora** a Supabase Storage (buckets ya creados).
-- Importación de **CSV de MapIt** → `puntos_topograficos` (dep. `papaparse` ya instalada).
+- Importación de **CSV de MapIt** → parseo real a `puntos_topograficos` (hoy el CSV se sube
+  y se guarda tal cual en Storage, sin parsear — el formato de columnas está sin confirmar
+  con el cliente, ver REQUIREMENTS §12).
 - **Google Maps** en la ficha de proyecto (`ubicacion geography` ya está en el esquema).
-- Descarga/subida de archivos **DWG/PDF** (`archivos_proyecto` ya está en el esquema).
+- Subida/descarga de **DWG/PDF** (mismo mecanismo que el CSV, falta la UI).
 - Pantalla de **gestión de usuarios** (hoy se administran desde el panel de Supabase Auth).
-- Portal de cliente externo, notificaciones por correo.
+- Notificaciones por correo.
 
-### Usuario de prueba
+### Usuarios de prueba
 
-Se sembró un admin para probar de inmediato (borralo desde Supabase → Authentication →
-Users cuando ya no lo necesites, o cambiale la contraseña):
+Uno por rol, para probar de inmediato (borralos desde Supabase → Authentication → Users
+cuando ya no los necesites, o cambiales la contraseña):
 
 ```
-admin@iaca.test  /  IacaAdmin!2026
+admin@iaca.test    /  IacaAdmin!2026      (admin)
+oficina@iaca.test  /  IacaOficina!2026    (oficina)
+campo@iaca.test    /  IacaCampo!2026      (campo)
+cliente@iaca.test  /  IacaCliente!2026    (cliente — vinculado a "Constructora Demo S.A.")
 ```
 
 ## Estructura del proyecto
 
 ```
-proxy.ts                         → refresca sesión de Supabase y protege rutas del dashboard
+proxy.ts                         → refresca sesión + control de acceso por rol en el dashboard
 src/
-  config/site.ts                 → configuración parametrizable (nombre, textos, navegación)
+  config/site.ts                 → config parametrizable + `navKeysByRole` (qué ve cada rol,
+                                   única fuente de verdad — proxy, sidebar y páginas lo leen)
   lib/
-    auth.ts                      → getSessionProfile / requireProfile / requireStaff (rol)
-    action.ts                    → makeFormAction: fábrica de Server Actions de formulario
+    auth.ts                      → getSessionProfile / requireProfile / requireRole / requireStaff
+    action.ts                    → makeFormAction: fábrica de Server Actions (guard staff/field/auth)
     form.ts                      → FormState + parseForm (validación zod → errores por campo)
     format.ts                    → formato de colones y fechas (es-CR)
     proyecto-flujo.ts            → flujo de estados (puro, compartible con el cliente)
+    uploads.ts                   → límites de adjuntos (puro, compartible con el cliente)
     supabase/{client,server,proxy}.ts
   services/                      → capa de negocio (SOA): un archivo por entidad
-    auth · clientes · proyectos · bitacora · tramites · cobros · kpi · profiles
-  components/ui/                 → primitivas del design system (button, field, table,
-                                   dialog, badge, section, action-form, delete-form)
+    auth · clientes · proyectos · bitacora · tramites · cobros · kpi · profiles · archivos
+    storage.service.ts           → subida a Storage (fotos/CSV) + URLs firmadas en lote
+  components/ui/                 → primitivas del design system (button, field, file-input,
+                                   table, dialog, badge, section, action-form, delete-form,
+                                   toast, stat-card, empty-state, skeleton)
   app/
     page.tsx                     → sitio público
-    (auth)/login/
+    (auth)/login/                → redirige a la home de CADA rol, no a una fija
     (dashboard)/
-      layout.tsx                 → sidebar + guard de sesión
-      clientes/ · proyectos/[id]/ · bitacora/ · tramites/ · cobros/[id]/ · kpi/
+      layout.tsx + _components/sidebar.tsx → nav filtrado por rol (`dashboardNavForRole`)
+      clientes/ · proyectos/[id]/ · tramites/ · cobros/[id]/ · kpi/  (solo admin/oficina)
+      bitacora/                  → admin/oficina/campo; sube fotos y CSV a Storage
+      mis-proyectos/[id]/        → solo `cliente`, de solo lectura
         page.tsx + actions.ts ("use server") + *-dialog.tsx ("use client")
   types/database.ts              → tipos generados desde Supabase (reales)
 supabase/migrations/
@@ -165,6 +192,9 @@ supabase/migrations/
   0003_security_hardening.sql    → hallazgos de Supabase Advisors
   0004_rls_and_profile_bootstrap.sql → trigger de perfil, helpers de rol, RLS definitiva,
                                        triggers de sellado de autoría (created_by, etc.)
+  0005_roles_access_and_storage.sql → profiles.cliente_id, RLS por los 4 roles (cliente ve
+                                       solo lo suyo; campo sin clientes/trámites/pagos),
+                                       buckets privados `bitacora-fotos`/`archivos-proyecto`
 ```
 
 Convenciones (arquitectura SOA, parametrización, `data-cy`, seguridad): ver [`CLAUDE.md`](./CLAUDE.md).

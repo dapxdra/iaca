@@ -1,7 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
+import { TriangleAlert } from "lucide-react";
 import { authContent } from "@/config/site";
+import { Button } from "@/components/ui/button";
+import { Field, Input } from "@/components/ui/field";
 import { loginAction } from "./actions";
 
 export function LoginForm() {
@@ -9,26 +12,20 @@ export function LoginForm() {
 
   return (
     <form action={formAction} data-cy="login-form" className="mt-6 flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-small font-medium text-foreground">
-          {authContent.emailLabel}
-        </label>
-        <input
+      <Field label={authContent.emailLabel} htmlFor="email">
+        <Input
           id="email"
           name="email"
           type="email"
           required
           autoComplete="email"
+          autoFocus
           data-cy="login-email"
-          className="border border-border bg-background px-3 py-2.5 text-body text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
         />
-      </div>
+      </Field>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-small font-medium text-foreground">
-          {authContent.passwordLabel}
-        </label>
-        <input
+      <Field label={authContent.passwordLabel} htmlFor="password">
+        <Input
           id="password"
           name="password"
           type="password"
@@ -36,24 +33,28 @@ export function LoginForm() {
           minLength={8}
           autoComplete="current-password"
           data-cy="login-password"
-          className="border border-border bg-background px-3 py-2.5 text-body text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
         />
-      </div>
+      </Field>
 
       {state && !state.success && (
-        <p role="alert" data-cy="login-error" className="text-small font-medium text-red-600">
+        <p
+          role="alert"
+          data-cy="login-error"
+          className="flex animate-fade-in items-center gap-2 rounded-md border border-red-700/30 bg-red-700/8 px-3 py-2 text-small font-medium text-red-700"
+        >
+          <TriangleAlert className="h-4 w-4 shrink-0" />
           {state.error}
         </p>
       )}
 
-      <button
+      <Button
         type="submit"
-        disabled={isPending}
+        loading={isPending}
         data-cy="login-submit"
-        className="mt-2 cursor-pointer bg-primary px-4 py-2.5 text-small font-semibold text-primary-foreground transition-colors duration-200 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-2 w-full"
       >
         {isPending ? authContent.submitPendingLabel : authContent.submitLabel}
-      </button>
+      </Button>
     </form>
   );
 }

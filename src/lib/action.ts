@@ -11,12 +11,21 @@
  */
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getSessionProfile, isStaff } from "@/lib/auth";
+import { getSessionProfile, isFieldStaff, isStaff } from "@/lib/auth";
 import { parseForm, type FormState } from "@/lib/form";
 
 const GENERIC_ERROR = "No se pudo completar la operación. Intentá de nuevo.";
 
-type Guard = "staff" | "auth";
+// "staff" = admin/oficina (la mayoría de CRUD). "field" = admin/oficina/campo
+// (bitácora: campo registra la suya). "auth" = cualquier perfil activo — casi
+// nunca es lo correcto ahora que existe el rol `cliente`, de solo lectura.
+type Guard = "staff" | "field" | "auth";
+
+function passesGuard(guard: Guard, role: Parameters<typeof isStaff>[0]): boolean {
+  if (guard === "staff") return isStaff(role);
+  if (guard === "field") return isFieldStaff(role);
+  return true;
+}
 
 export function makeFormAction<S extends z.ZodType>(opts: {
   schema: S;
@@ -30,7 +39,7 @@ export function makeFormAction<S extends z.ZodType>(opts: {
 
   return async function action(_prev: FormState, formData: FormData): Promise<FormState> {
     const profile = await getSessionProfile();
-    if (!profile || (guard === "staff" && !isStaff(profile.role))) {
+    if (!profile || !passesGuard(guard, profile.role)) {
       return {
         status: "error",
         message: opts.permissionMessage ?? "No tenés permiso para realizar esta acción.",

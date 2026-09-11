@@ -1,26 +1,36 @@
 /**
  * Helpers de sesión y autorización para el servidor (Server Components y
  * Server Actions). La autorización REAL vive en las políticas RLS de Postgres
- * (supabase/migrations/0004_...) — esto es la segunda capa: falla rápido y con
- * un mensaje claro antes de siquiera tocar la base de datos, y da el rol a la
- * UI para esconder acciones que el usuario no puede hacer.
+ * (supabase/migrations/0005_...) — esto es la segunda capa: falla rápido, con
+ * redirecciones correctas por rol, antes de siquiera tocar datos que el
+ * usuario no vería de todos modos.
+ *
+ * 4 roles, 3 niveles de acceso (docs/REQUIREMENTS.md sección 3):
+ *   - `admin` / `oficina` ("staff"): acceso total de gestión.
+ *   - `campo` ("field staff", junto con admin/oficina): solo bitácora.
+ *   - `cliente`: solo lectura de sus propios proyectos (`/mis-proyectos`).
+ * Qué ve cada rol en el menú y a qué rutas puede entrar se define una sola
+ * vez en `src/config/site.ts` (`navKeysByRole`) — este archivo solo lo aplica.
  */
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Database } from "@/types/database";
+import { defaultRouteForRole, type UserRole } from "@/config/site";
 
-export type UserRole = Database["public"]["Enums"]["user_role"];
+export type { UserRole };
 
 export type SessionProfile = {
   userId: string;
   email: string | null;
   fullName: string;
   role: UserRole;
+  /** Solo no-null cuando `role === "cliente"` — fila de `clientes` asociada. */
+  clienteId: string | null;
 };
 
 const STAFF_ROLES: UserRole[] = ["admin", "oficina"];
+const FIELD_STAFF_ROLES: UserRole[] = ["admin", "oficina", "campo"];
 
-/** Perfil del usuario autenticado, o `null` si no hay sesión / no tiene perfil. */
+/** Perfil del usuario autenticado, o `null` si no hay sesión / no tiene perfil activo. */
 export async function getSessionProfile(): Promise<SessionProfile | null> {
   const supabase = await createClient();
 
@@ -31,7 +41,7 @@ export async function getSessionProfile(): Promise<SessionProfile | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, active")
+    .select("full_name, role, active, cliente_id")
     .eq("id", user.id)
     .single();
 
@@ -42,6 +52,7 @@ export async function getSessionProfile(): Promise<SessionProfile | null> {
     email: user.email ?? null,
     fullName: profile.full_name,
     role: profile.role,
+    clienteId: profile.cliente_id,
   };
 }
 
@@ -59,10 +70,28 @@ export function isStaff(role: UserRole): boolean {
   return STAFF_ROLES.includes(role);
 }
 
+export function isFieldStaff(role: UserRole): boolean {
+  return FIELD_STAFF_ROLES.includes(role);
+}
+
 /**
- * Exige rol admin/oficina. Devuelve el perfil si pasa; si no, lanza — las
- * Server Actions lo capturan y muestran un error genérico, y la UI ya debería
- * haber escondido la acción de todos modos.
+ * Exige que el rol esté en `allowed`; si no, redirige a la pantalla de inicio
+ * de ESE rol (no a /login — ya está logueado, solo no tiene acceso acá).
+ * Usar al inicio de cada página para que escribir la URL a mano no sirva de
+ * nada — la restricción de rol no depende solo de qué enlaces se muestran.
+ */
+export async function requireRole(allowed: UserRole[]): Promise<SessionProfile> {
+  const profile = await requireProfile();
+  if (!allowed.includes(profile.role)) {
+    redirect(defaultRouteForRole(profile.role));
+  }
+  return profile;
+}
+
+/**
+ * Exige rol admin/oficina. Devuelve el perfil si pasa; si no, lanza — pensado
+ * para Server Actions (que capturan el error y muestran un mensaje genérico),
+ * no para páginas (ahí usar `requireRole`, que redirige en vez de tirar error).
  */
 export async function requireStaff(): Promise<SessionProfile> {
   const profile = await requireProfile();
