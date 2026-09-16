@@ -135,7 +135,7 @@ export const dashboardPages: Record<string, DashboardPageContent> = {
 };
 
 export const homeContent = {
-  loginLabel: "Acceso interno",
+  loginLabel: "Acceder",
   contactCtaLabel: "Contáctanos",
   heroTitle: "Servicios de topografía en Costa Rica",
   heroSubtitle:
@@ -231,7 +231,7 @@ export function buildWhatsAppUrl(message: string = contactContent.whatsapp.prefi
 }
 
 export const authContent = {
-  title: `Acceso interno ${siteConfig.name}`,
+  title: `Acceder ${siteConfig.name}`,
   description: "Ingresa con tu correo y contraseña para acceder al panel de gestión.",
   emailLabel: "Correo electrónico",
   passwordLabel: "Contraseña",
