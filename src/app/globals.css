@@ -23,6 +23,18 @@
   --accent-foreground: #ffffff;
   --muted-foreground: var(--color-slate);
 
+  /* Estados semánticos (error / éxito / advertencia).
+     Existen como tokens porque los tonos fijos de Tailwind NO cambian con el
+     esquema de color: `text-red-700` sobre el fondo tinta del modo oscuro da
+     2.7:1 y era ilegible — todos los mensajes de error del panel lo usaban.
+     Los valores de abajo están medidos contra los cuatro fondos del sistema
+     (background, surface, surface-raised, surface-sunken) y cumplen AA (≥4.5:1)
+     en el peor caso de cada esquema.
+     Usar `text-danger` / `text-success` / `text-warning`, nunca `text-red-700`. */
+  --danger: #b91c1c; /* AA: 5.43:1 en el peor fondo claro */
+  --success: #166534; /* green-800; green-700 caía a 4.21:1 sobre surface-sunken */
+  --warning: #92400e; /* amber-800; amber-600 caía a 2.68:1 — fallaba AA */
+
   /* Superficies: la "hoja" (raised) es un marfil más claro que el fondo, así
      las tarjetas se despegan del papel incluso antes de la sombra. */
   --surface: color-mix(in srgb, var(--color-navy) 4%, var(--color-paper));
@@ -48,6 +60,9 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-ink: var(--color-ink);
   --color-navy: var(--color-navy);
   --color-slate: var(--color-slate);
@@ -129,6 +144,12 @@
     --accent: #a5b4fc;
     --accent-foreground: var(--color-ink);
     --muted-foreground: #9da1be;
+
+    /* Versiones claras de los estados: sobre fondo oscuro hay que subir la
+       luminosidad, no bajarla. Medidos contra ink/surface/raised/sunken. */
+    --danger: #f87171; /* AA: 5.23:1 en el peor fondo oscuro */
+    --success: #4ade80; /* AAA: 8.30:1 */
+    --warning: #fbbf24; /* AAA: 8.67:1 */
 
     --surface: color-mix(in srgb, #ffffff 4%, var(--color-ink));
     --surface-raised: color-mix(in srgb, #ffffff 7%, var(--color-ink));

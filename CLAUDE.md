@@ -81,6 +81,88 @@ la UI.
      expone una URL pública — toda lectura pasa por `getSignedUrls()`
      (`src/services/storage.service.ts`), que expiran en 1 hora.
 
+## SEO del sitio público
+
+Todo lo que leen los buscadores se genera desde `src/config/site.ts`; no hay metadata
+escrita a mano en los componentes.
+
+| Qué | Dónde |
+|---|---|
+| Metadata base (title/description/OG/robots), `viewport`, `themeColor` | [src/app/layout.tsx](./src/app/layout.tsx) |
+| `robots.txt` (deriva las rutas privadas de `dashboardNav`) | [src/app/robots.ts](./src/app/robots.ts) |
+| `sitemap.xml` (home + páginas de `legalNav`) | [src/app/sitemap.ts](./src/app/sitemap.ts) |
+| Manifest e iconos | [src/app/manifest.ts](./src/app/manifest.ts), `public/icon*.png`, `src/app/favicon.ico` |
+| Imagen de vista previa, generada en build | [src/app/opengraph-image.tsx](./src/app/opengraph-image.tsx) |
+| Structured data JSON-LD | [src/components/structured-data.tsx](./src/components/structured-data.tsx) |
+| Palabras clave objetivo y FAQ | `seoKeywords` y `faqContent` en `config/site.ts` |
+
+Reglas:
+
+1. **Una página pública nueva** debe declarar su `metadata` con `title`, `description` y
+   `alternates.canonical`, y agregarse a `legalNav` o al `sitemap.ts` si debe indexarse.
+2. **Una pantalla privada nueva** no necesita nada: hereda `robots: noindex` del layout del
+   dashboard, y `robots.txt` la excluye sola al agregarla a `dashboardNav`.
+3. **`seoKeywords` es una guía editorial, no un mecanismo.** Google ignora la meta
+   `keywords` desde 2009: posiciona por el texto visible. Los términos tienen que aparecer
+   de forma natural en títulos, servicios y FAQ. Nunca agregar palabras clave de servicios
+   que la empresa no presta — el keyword stuffing irrelevante hunde el ranking de los
+   términos que sí importan.
+4. **El structured data no puede afirmar nada que no esté en el HTML visible**, ni datos sin
+   confirmar (dirección, horario, calificaciones). Google lo sanciona como spam de datos
+   estructurados. Lo que no esté confirmado se omite: ver `businessInfo.address`, que es
+   `null` a propósito.
+5. **Imágenes**: hoy el sitio no tiene ninguna de mapa de bits (todo es SVG en línea y un
+   `<canvas>`). Al agregar fotos de trabajos, usar `next/image` y nunca `<img>`, para que
+   pasen por el optimizador (AVIF/WebP, configurado en `next.config.ts`). Todo elemento
+   gráfico decorativo lleva `aria-hidden="true"`; el que aporte información lleva `alt` real.
+
+## Formulario público de contacto
+
+`src/components/contact-form.tsx` → `src/app/actions.ts` → `src/services/contacto.service.ts`.
+
+Es la **única excepción** a la regla de usar siempre el cliente de sesión de Supabase: la
+escritura usa `createAdminClient()` (service role) porque `contacto_mensajes` no tiene
+política de insert en RLS **para nadie**. Eso es deliberado — si `anon` pudiera insertar, un
+bot llamaría la API REST de Supabase directamente y se saltaría la validación, el honeypot y
+el límite por IP. Sin política, la única puerta es la Server Action, que sí valida.
+
+`src/lib/supabase/admin.ts` lleva `import "server-only"`: si alguien lo importa desde un
+componente cliente, el build falla en vez de filtrar la service role key al navegador.
+
+Capas anti-spam (ninguna es un control de seguridad por sí sola, y así está documentado en
+el código): honeypot → trampa de tiempo → heurística de enlaces → límite de 5 envíos por
+hora y por IP. La IP se guarda solo como SHA-256 con sal (`CONTACT_IP_SALT`), nunca en
+claro, y así está declarado en la política de privacidad.
+
+Los envíos sospechosos se guardan marcados como `spam` en vez de descartarse: si el filtro
+se equivoca, la solicitud legítima sigue recuperable en la bandeja.
+
+## Colores de estado: usar los tokens, no los de Tailwind
+
+`text-red-700`, `text-green-700`, `text-amber-600` y compañía **no cambian con el esquema de
+color**: sobre el fondo tinta del modo oscuro, `red-700` daba 2.7:1 y todos los mensajes de
+error del panel eran ilegibles.
+
+Usar `text-danger`, `text-success` y `text-warning` (definidos en
+[src/app/globals.css](./src/app/globals.css) con un valor por esquema, medido contra los
+cuatro fondos del sistema y cumpliendo AA ≥4.5:1 en el peor caso). Aplica igual a
+`border-*` y `bg-*`.
+
+Excepción documentada: los puntos y rellenos tenues de `ui/badge.tsx` sí usan tonos fijos,
+porque ahí el texto siempre va en `text-foreground` y el color es decorativo.
+
+## Seguridad de la capa HTTP
+
+[next.config.ts](./next.config.ts) envía HSTS, CSP, `X-Content-Type-Options`,
+`Referrer-Policy`, `X-Frame-Options` y `Permissions-Policy` **solo en producción** (en
+desarrollo estorban al recargado en caliente y HSTS ensucia el navegador para localhost).
+`src/proxy.ts` redirige http → https con 308, salvo en localhost.
+
+La CSP no usa nonce a propósito: exigiría renderizado dinámico en todas las páginas y el
+sitio público dejaría de servirse estático. El razonamiento completo y cuándo habría que
+revisarlo están comentados en `next.config.ts` — leerlo antes de integrar cualquier script
+de terceros.
+
 ## Proxy de sesión (antes "middleware")
 
 `proxy.ts` (raíz) + [src/lib/supabase/proxy.ts](./src/lib/supabase/proxy.ts) refrescan la

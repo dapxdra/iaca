@@ -12,7 +12,7 @@ const controlClass =
   "hover:border-border-strong " +
   "focus-visible:border-accent focus-visible:shadow-[0_0_0_3px_var(--ring)] " +
   "disabled:opacity-55 disabled:cursor-not-allowed " +
-  "aria-[invalid=true]:border-red-700 aria-[invalid=true]:focus-visible:shadow-[0_0_0_3px_rgb(185_28_28/0.25)]";
+  "aria-[invalid=true]:border-danger aria-[invalid=true]:focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--danger)_28%,transparent)]";
 
 export function Field({
   label,
@@ -33,15 +33,23 @@ export function Field({
     <div className="flex flex-col gap-1.5">
       <label htmlFor={htmlFor} className="text-small font-medium text-foreground">
         {label}
-        {required && <span className="text-red-700"> *</span>}
+        {required && <span className="text-danger"> *</span>}
       </label>
       {children}
-      {hint && !error && <p className="text-small text-muted-foreground">{hint}</p>}
+      {/* Los `id` siguen el patrón `<campo>-hint` / `<campo>-error` para que el
+          control pueda apuntarlos con `aria-describedby` y el lector de
+          pantalla lea la pista o el error junto al campo. */}
+      {hint && !error && (
+        <p id={`${htmlFor}-hint`} className="text-small text-muted-foreground">
+          {hint}
+        </p>
+      )}
       {error && (
         <p
+          id={`${htmlFor}-error`}
           role="alert"
           data-cy={`${htmlFor}-error`}
-          className="animate-fade-in text-small font-medium text-red-700"
+          className="animate-fade-in text-small font-medium text-danger"
         >
           {error}
         </p>

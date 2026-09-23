@@ -81,7 +81,7 @@ export default async function CobrosPage() {
                 <Td
                   numeric
                   className={`whitespace-nowrap font-semibold ${
-                    (c.saldo_pendiente ?? 0) > 0 ? "text-foreground" : "text-green-700"
+                    (c.saldo_pendiente ?? 0) > 0 ? "text-foreground" : "text-success"
                   }`}
                 >
                   {formatColones(c.saldo_pendiente)}

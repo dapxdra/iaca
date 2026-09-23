@@ -252,6 +252,54 @@ export type Database = {
           },
         ]
       }
+      contacto_mensajes: {
+        Row: {
+          created_at: string
+          email: string
+          estado: Database["public"]["Enums"]["contacto_estado"]
+          id: string
+          ip_hash: string | null
+          mensaje: string
+          nombre: string
+          notas: string | null
+          servicio: string | null
+          telefono: string | null
+          ubicacion: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          estado?: Database["public"]["Enums"]["contacto_estado"]
+          id?: string
+          ip_hash?: string | null
+          mensaje: string
+          nombre: string
+          notas?: string | null
+          servicio?: string | null
+          telefono?: string | null
+          ubicacion?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          estado?: Database["public"]["Enums"]["contacto_estado"]
+          id?: string
+          ip_hash?: string | null
+          mensaje?: string
+          nombre?: string
+          notas?: string | null
+          servicio?: string | null
+          telefono?: string | null
+          ubicacion?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       pagos: {
         Row: {
           created_at: string
@@ -1748,6 +1796,7 @@ export type Database = {
     Enums: {
       archivo_tipo: "csv" | "dwg" | "pdf" | "imagen" | "otro"
       cliente_tipo: "persona_fisica" | "persona_juridica"
+      contacto_estado: "nuevo" | "leido" | "respondido" | "spam"
       metodo_pago:
         | "efectivo"
         | "sinpe_movil"
@@ -1908,6 +1957,7 @@ export const Constants = {
     Enums: {
       archivo_tipo: ["csv", "dwg", "pdf", "imagen", "otro"],
       cliente_tipo: ["persona_fisica", "persona_juridica"],
+      contacto_estado: ["nuevo", "leido", "respondido", "spam"],
       metodo_pago: [
         "efectivo",
         "sinpe_movil",

@@ -16,11 +16,11 @@ export const dynamic = "force-dynamic";
 function EntregaTag({ v }: { v: boolean | null }) {
   if (v === null) return <span className="text-muted-foreground">—</span>;
   return v ? (
-    <span className="inline-flex items-center gap-1 text-small font-medium text-green-700">
+    <span className="inline-flex items-center gap-1 text-small font-medium text-success">
       <CheckCircle2 className="h-3.5 w-3.5" /> A tiempo
     </span>
   ) : (
-    <span className="text-small font-medium text-red-700">Tarde</span>
+    <span className="text-small font-medium text-danger">Tarde</span>
   );
 }
 

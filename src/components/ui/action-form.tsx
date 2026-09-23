@@ -50,7 +50,7 @@ export function ActionForm({
         <p
           role="alert"
           data-cy={`${dataCy}-error`}
-          className="animate-fade-in rounded-md border border-red-700/30 bg-red-700/8 px-3 py-2 text-small font-medium text-red-700"
+          className="animate-fade-in rounded-md border border-danger/30 bg-danger/8 px-3 py-2 text-small font-medium text-danger"
         >
           {formError}
         </p>

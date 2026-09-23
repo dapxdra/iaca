@@ -1,5 +1,22 @@
+import type { Metadata } from "next";
 import { requireProfile } from "@/lib/auth";
+import { siteConfig } from "@/config/site";
 import { DashboardSidebar } from "./_components/sidebar";
+
+/**
+ * `noindex, nofollow` para todo el panel. Se hereda a cada página de abajo, así
+ * que una pantalla nueva queda excluida sin que haya que acordarse.
+ *
+ * Es una segunda capa sobre el `Disallow` de robots.txt: `Disallow` evita el
+ * rastreo, pero una URL enlazada desde otro sitio puede indexarse igual sin
+ * haber sido rastreada. `noindex` es lo que efectivamente la saca del índice.
+ * Ninguno de los dos es control de acceso — eso es la sesión y RLS.
+ */
+export const metadata: Metadata = {
+  title: { default: "Panel", template: `%s | Panel ${siteConfig.name}` },
+  description: siteConfig.appDescription,
+  robots: { index: false, follow: false, nocache: true },
+};
 
 /**
  * Layout del área interna. La redirección a /login la hace el proxy de la raíz
@@ -16,10 +33,12 @@ export default async function DashboardLayout({
   const profile = await requireProfile();
 
   return (
-    <div className="flex min-h-svh bg-background">
+    // Columna en móvil (barra superior arriba, contenido debajo) y fila en
+    // escritorio (barra lateral fija a la izquierda) — ver DashboardSidebar.
+    <div className="flex min-h-svh flex-col bg-background lg:flex-row">
       <DashboardSidebar fullName={profile.fullName} role={profile.role} />
-      <main className="min-w-0 flex-1">
-        <div className="mx-auto max-w-6xl px-6 py-8 sm:px-8 lg:px-10">{children}</div>
+      <main id="contenido" className="min-w-0 flex-1">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-8 lg:px-10">{children}</div>
       </main>
     </div>
   );

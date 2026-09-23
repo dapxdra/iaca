@@ -40,7 +40,7 @@ export function LoginForm() {
         <p
           role="alert"
           data-cy="login-error"
-          className="flex animate-fade-in items-center gap-2 rounded-md border border-red-700/30 bg-red-700/8 px-3 py-2 text-small font-medium text-red-700"
+          className="flex animate-fade-in items-center gap-2 rounded-md border border-danger/30 bg-danger/8 px-3 py-2 text-small font-medium text-danger"
         >
           <TriangleAlert className="h-4 w-4 shrink-0" />
           {state.error}

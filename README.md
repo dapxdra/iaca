@@ -96,7 +96,43 @@ git push -u origin main
 1. En [vercel.com/new](https://vercel.com/new), importa el repositorio recién subido.
 2. Agrega las mismas variables de entorno de `.env.local` en **Project Settings →
    Environment Variables**.
-3. Deploy. Cada push a `main` (y cada PR) generará su propio despliegue automáticamente.
+3. El dominio de producción es **`https://topografiaiaca.com`**, ya cableado como respaldo en
+   `src/config/site.ts`. Declarar igual `NEXT_PUBLIC_APP_URL` en Vercel: tiene prioridad
+   sobre el respaldo y es lo que hace que cada despliegue de vista previa se apunte a sí
+   mismo en vez de al dominio real.
+4. Apuntar el dominio al proyecto en **Project Settings → Domains**. Vercel emite el
+   certificado TLS solo; hasta que el DNS propague, el redirect a https y la cabecera HSTS
+   no tienen a dónde llevar.
+5. Deploy. Cada push a `main` (y cada PR) generará su propio despliegue automáticamente.
+
+### 7. Publicar el sitio en Google
+
+El código ya expone todo lo que Google necesita; lo que sigue se hace una vez, fuera del
+repositorio:
+
+1. **Search Console** — dar de alta el dominio en
+   [search.google.com/search-console](https://search.google.com/search-console). El método
+   recomendado es el registro **DNS TXT** (no requiere tocar código). Si se prefiere la
+   etiqueta HTML, hay un `verification` comentado en
+   [`src/app/layout.tsx`](./src/app/layout.tsx) listo para pegar el token.
+2. **Enviar el sitemap** — en Search Console → *Sitemaps*, indicar `sitemap.xml`. Se genera
+   solo desde [`src/app/sitemap.ts`](./src/app/sitemap.ts).
+3. **Perfil de Negocio de Google** — es lo que más mueve la aguja para una empresa local:
+   sin ficha en Google Maps, el sitio no compite en el paquete local de resultados. Al
+   crearla, confirmar la dirección física y el horario, y luego agregarlos en
+   `businessInfo` y `contactContent` (`src/config/site.ts`) para que el structured data los
+   declare. Hasta que estén confirmados se omiten a propósito: un dato inventado en
+   structured data es motivo de penalización.
+4. **Revisar el structured data** — pegar la URL en el
+   [test de resultados enriquecidos](https://search.google.com/test/rich-results). Debe
+   detectar `ProfessionalService`, `WebSite` y `FAQPage`.
+5. **Revisión legal** — las páginas `/privacidad` y `/terminos` son borradores redactados
+   para el marco costarricense (Ley N° 8968) y coherentes con lo que el sitio hace, pero
+   **deben pasar por un abogado antes de considerarse definitivas**. Su contenido está en
+   `privacyPolicy` y `termsAndConditions` en `src/config/site.ts`.
+6. **HSTS con `preload`** — la cabecera ya se envía. Inscribir el dominio en
+   [hstspreload.org](https://hstspreload.org) es opcional y **difícil de revertir**: hacerlo
+   solo cuando el dominio y todos sus subdominios sirvan por https de forma estable.
 
 ## Estado actual (MVP)
 
@@ -115,7 +151,11 @@ Implementado y probado contra la base de datos real:
 | **Cobros** — definir monto, registrar/eliminar pagos, saldo automático (admin/oficina) | ✅ |
 | **Reportes KPI** — tarjetas, gráficos por zona, tablas (admin/oficina) | ✅ |
 | **Mis proyectos** — portal de solo lectura para el rol `cliente` | ✅ |
-| Sitio informativo público | ✅ (del scaffold) |
+| Sitio informativo público (servicios, proceso, FAQ, contacto) | ✅ |
+| **SEO** — metadata, Open Graph, `robots.txt`, `sitemap.xml`, structured data JSON-LD | ✅ |
+| **Formulario de contacto público** — validación zod + honeypot + límite por IP | ✅ |
+| Páginas legales `/privacidad` y `/terminos` (borrador, pendiente de revisión legal) | ⚠️ |
+| Cabeceras de seguridad (HSTS, CSP, anti-clickjacking) + redirect a https | ✅ |
 
 ### Roles y qué ve cada uno
 
@@ -170,17 +210,28 @@ src/
     proyecto-flujo.ts            → flujo de estados (puro, compartible con el cliente)
     uploads.ts                   → límites de adjuntos (puro, compartible con el cliente)
     supabase/{client,server,proxy}.ts
+    supabase/admin.ts            → cliente service role, `server-only` (solo formulario público)
   services/                      → capa de negocio (SOA): un archivo por entidad
     auth · clientes · proyectos · bitacora · tramites · cobros · kpi · profiles · archivos
     storage.service.ts           → subida a Storage (fotos/CSV) + URLs firmadas en lote
-  components/ui/                 → primitivas del design system (button, field, file-input,
+    contacto.service.ts          → validación zod + anti-spam del formulario público
+  components/
+    site-nav · site-footer · contact-form · legal-document · structured-data
+    reveal · topo-background · whatsapp-float
+    ui/                          → primitivas del design system (button, field, file-input,
                                    table, dialog, badge, section, action-form, delete-form,
                                    toast, stat-card, empty-state, skeleton)
   app/
-    page.tsx                     → sitio público
+    page.tsx                     → sitio público (servicios, proceso, FAQ, contacto)
+    actions.ts                   → Server Action del formulario de contacto
+    layout.tsx                   → metadata base + Open Graph + viewport/themeColor
+    robots.ts · sitemap.ts · manifest.ts · opengraph-image.tsx → archivos para buscadores
+    not-found.tsx                → 404 propia, con navegación y enlaces útiles
+    (legal)/privacidad · terminos → páginas legales (contenido en config/site.ts)
     (auth)/login/                → redirige a la home de CADA rol, no a una fija
     (dashboard)/
-      layout.tsx + _components/sidebar.tsx → nav filtrado por rol (`dashboardNavForRole`)
+      layout.tsx + _components/sidebar.tsx → nav filtrado por rol (`dashboardNavForRole`),
+                                   barra fija en escritorio y cajón deslizante en móvil
       clientes/ · proyectos/[id]/ · tramites/ · cobros/[id]/ · kpi/  (solo admin/oficina)
       bitacora/                  → admin/oficina/campo; sube fotos y CSV a Storage
       mis-proyectos/[id]/        → solo `cliente`, de solo lectura
@@ -195,6 +246,9 @@ supabase/migrations/
   0005_roles_access_and_storage.sql → profiles.cliente_id, RLS por los 4 roles (cliente ve
                                        solo lo suyo; campo sin clientes/trámites/pagos),
                                        buckets privados `bitacora-fotos`/`archivos-proyecto`
+  0006_contacto_mensajes.sql     → bandeja del formulario público. RLS sin política de
+                                   insert a propósito: solo escribe la Server Action con la
+                                   service role, para que todo envío pase por el anti-spam
 ```
 
 Convenciones (arquitectura SOA, parametrización, `data-cy`, seguridad): ver [`CLAUDE.md`](./CLAUDE.md).

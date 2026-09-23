@@ -69,7 +69,7 @@ export function FileInput({
                 type="button"
                 onClick={() => remove(i)}
                 aria-label={`Quitar ${file.name}`}
-                className="shrink-0 cursor-pointer rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-red-700"
+                className="shrink-0 cursor-pointer rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-danger"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

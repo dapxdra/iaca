@@ -120,7 +120,7 @@ export default async function ProyectoDetallePage({
         </ol>
 
         {cancelado && (
-          <p className="mt-4 rounded-md border border-red-600/30 bg-red-600/8 px-3 py-2 text-small font-medium text-red-700">
+          <p className="mt-4 rounded-md border border-danger/30 bg-danger/8 px-3 py-2 text-small font-medium text-danger">
             Proyecto cancelado.
           </p>
         )}
@@ -279,7 +279,7 @@ export default async function ProyectoDetallePage({
           <DataItem label="Saldo pendiente">
             <span
               className={
-                (cobro?.saldo_pendiente ?? 0) > 0 ? "text-foreground" : "text-green-700"
+                (cobro?.saldo_pendiente ?? 0) > 0 ? "text-foreground" : "text-success"
               }
             >
               {formatColones(cobro?.saldo_pendiente ?? null)}

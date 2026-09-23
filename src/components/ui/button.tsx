@@ -23,7 +23,7 @@ const variants: Record<Variant, string> = {
     "border border-border bg-surface-raised text-foreground shadow-xs hover:-translate-y-px hover:border-border-strong hover:shadow-sm",
   ghost: "text-foreground hover:bg-surface-sunken",
   danger:
-    "border border-red-700/35 bg-surface-raised text-red-700 hover:-translate-y-px hover:border-red-700/60 hover:bg-red-700/8 hover:shadow-sm",
+    "border border-danger/35 bg-surface-raised text-danger hover:-translate-y-px hover:border-danger/60 hover:bg-danger/8 hover:shadow-sm",
 };
 
 const sizes: Record<Size, string> = {

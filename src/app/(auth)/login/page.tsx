@@ -1,7 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { authContent, siteConfig } from "@/config/site";
 import { LoginForm } from "./login-form";
+
+/**
+ * La pantalla de acceso no aporta nada a quien busca en Google y, si se
+ * indexara, competiría con la home por la marca "IACA". Fuera del índice.
+ */
+export const metadata: Metadata = {
+  title: "Acceder",
+  description: siteConfig.appDescription,
+  robots: { index: false, follow: false },
+};
 
 export default function LoginPage() {
   return (

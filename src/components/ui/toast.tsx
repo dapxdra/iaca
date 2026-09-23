@@ -35,8 +35,8 @@ const ICON: Record<ToastTone, typeof CheckCircle2> = {
 };
 
 const ACCENT: Record<ToastTone, string> = {
-  success: "text-green-700",
-  error: "text-red-700",
+  success: "text-success",
+  error: "text-danger",
   info: "text-accent",
 };
 

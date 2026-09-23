@@ -58,9 +58,9 @@ export default async function TramitesPage({
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-sunken px-5 py-3">
           <div className="flex items-center gap-2">
             {alertas.length > 0 ? (
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertTriangle className="h-4 w-4 text-warning" aria-hidden="true" />
             ) : (
-              <ShieldCheck className="h-4 w-4 text-green-600" />
+              <ShieldCheck className="h-4 w-4 text-success" aria-hidden="true" />
             )}
             <h2 className="text-body font-semibold text-foreground">
               Sin revisión hace {umbralDias}+ días
@@ -92,7 +92,7 @@ export default async function TramitesPage({
         <div className="p-5">
           {alertas.length === 0 ? (
             <p className="flex items-center gap-2 text-small text-muted-foreground">
-              <ShieldCheck className="h-4 w-4 text-green-600" />
+              <ShieldCheck className="h-4 w-4 text-success" aria-hidden="true" />
               Ningún trámite abierto supera el umbral.
             </p>
           ) : (
@@ -115,7 +115,7 @@ export default async function TramitesPage({
                     <span className="text-small text-muted-foreground">
                       envío {formatDate(a.fecha_envio)}
                     </span>
-                    <span className="rounded-full border border-amber-500/40 bg-amber-500/12 px-2 py-0.5 text-small font-semibold tabular-nums text-amber-700">
+                    <span className="rounded-full border border-warning/40 bg-warning/12 px-2 py-0.5 text-small font-semibold tabular-nums text-warning">
                       {a.dias_sin_revision} días
                     </span>
                     <EstadoTramiteBadge estado={a.estado} />

@@ -36,13 +36,17 @@ export function SiteNav() {
         <ul data-cy="nav-links-desktop" className="hidden items-center gap-8 md:flex">
           {publicNav.map((item) => (
             <li key={item.key}>
-              <a
-                href={item.href}
+              {/* Ancla con la raíz por delante (`/#servicios`): desde la home
+                  salta dentro de la misma página, y desde /privacidad o
+                  /terminos navega a la home y luego salta. Con el `#servicios`
+                  pelado, en esas páginas no iría a ninguna parte. */}
+              <Link
+                href={`/${item.href}`}
                 data-cy={`nav-${item.key}`}
                 className="relative text-small font-medium text-foreground transition-colors duration-200 hover:text-primary after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full"
               >
                 {item.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
@@ -50,18 +54,21 @@ export function SiteNav() {
         <div className="hidden items-center gap-6 md:flex">
           <Link
             href="/login"
+            // El panel es privado: no debe transmitir autoridad de enlace ni
+            // aparecer como resultado (también va `noindex` en su metadata).
+            rel="nofollow"
             data-cy="nav-login"
             className="text-small font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
           >
             {homeContent.loginLabel}
           </Link>
-          <a
-            href="#contacto"
+          <Link
+            href="/#contacto"
             data-cy="nav-contact-cta"
             className="rounded-md bg-primary px-5 py-2.5 text-small font-semibold text-primary-foreground shadow-xs transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-px hover:bg-[color-mix(in_srgb,var(--accent)_18%,var(--primary))] hover:shadow-sm focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--ring)]"
           >
             {homeContent.contactCtaLabel}
-          </a>
+          </Link>
         </div>
 
         <button
@@ -84,35 +91,38 @@ export function SiteNav() {
           <ul className="flex flex-col gap-4">
             {publicNav.map((item) => (
               <li key={item.key}>
-                <a
-                  href={item.href}
+                <Link
+                  href={`/${item.href}`}
                   data-cy={`nav-mobile-${item.key}`}
                   onClick={() => setIsOpen(false)}
-                  className="block text-body font-medium text-foreground"
+                  // py-2 lleva el área táctil a ~44px de alto, el mínimo que
+                  // piden las guías de accesibilidad móvil y Lighthouse.
+                  className="block py-2 text-body font-medium text-foreground"
                 >
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
             <li>
               <Link
                 href="/login"
+                rel="nofollow"
                 data-cy="nav-mobile-login"
                 onClick={() => setIsOpen(false)}
-                className="block text-body font-medium text-muted-foreground"
+                className="block py-2 text-body font-medium text-muted-foreground"
               >
                 {homeContent.loginLabel}
               </Link>
             </li>
           </ul>
-          <a
-            href="#contacto"
+          <Link
+            href="/#contacto"
             data-cy="nav-mobile-contact-cta"
             onClick={() => setIsOpen(false)}
-            className="mt-6 block rounded-md bg-primary px-5 py-2.5 text-center text-small font-semibold text-primary-foreground"
+            className="mt-6 block rounded-md bg-primary px-5 py-3 text-center text-small font-semibold text-primary-foreground"
           >
             {homeContent.contactCtaLabel}
-          </a>
+          </Link>
         </div>
       )}
     </header>

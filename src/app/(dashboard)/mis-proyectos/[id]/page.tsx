@@ -85,7 +85,7 @@ export default async function MiProyectoDetallePage({
           })}
         </ol>
         {cancelado && (
-          <p className="mt-4 rounded-md border border-red-600/30 bg-red-600/8 px-3 py-2 text-small font-medium text-red-700">
+          <p className="mt-4 rounded-md border border-danger/30 bg-danger/8 px-3 py-2 text-small font-medium text-danger">
             Este proyecto fue cancelado.
           </p>
         )}
