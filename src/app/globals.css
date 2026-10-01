@@ -198,6 +198,13 @@ html {
   h4 {
     font-family: var(--font-heading);
   }
+
+  /* Edge agrega su propio botón de mostrar contraseña; el login ya trae uno
+     propio, así que se ocultaría duplicado. */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
 }
 
 ::selection {

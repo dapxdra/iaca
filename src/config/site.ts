@@ -327,7 +327,7 @@ export const processSteps = [
 export const confianzaContent = {
   heading: "Precisión con respaldo técnico",
   description:
-    "Cada levantamiento se referencia al sistema geodésico oficial de Costa Rica, y cada trámite se le da seguimiento hasta su cierre.",
+    "Cada levantamiento se referencia al sistema geodésico oficial de Costa Rica, y a cada trámite se le da seguimiento hasta su cierre.",
   // Hechos verificables del dominio — nunca cifras o testimonios inventados
   // (ver design-system/MASTER.md).
   signals: [
@@ -704,6 +704,8 @@ export const authContent = {
   description: "Ingresa con tu correo y contraseña para acceder al panel de gestión.",
   emailLabel: "Correo electrónico",
   passwordLabel: "Contraseña",
+  showPasswordLabel: "Mostrar contraseña",
+  hidePasswordLabel: "Ocultar contraseña",
   submitLabel: "Iniciar sesión",
   submitPendingLabel: "Ingresando…",
   // Mensaje único para credenciales inválidas o error inesperado: no debe
