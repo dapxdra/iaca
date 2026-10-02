@@ -10,6 +10,9 @@ import { TableWrap, Th, Td } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DeleteForm } from "@/components/ui/delete-form";
 import { BitacoraDialog } from "./bitacora-dialog";
+import { OutboxPanel } from "@/components/offline/outbox-panel";
+import { OfflineSetup } from "@/components/offline/offline-setup";
+import { InstallPrompt } from "@/components/offline/install-prompt";
 import { deleteBitacoraAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +35,10 @@ export default async function BitacoraPage() {
         content={dashboardPages.bitacora}
         action={proyectos.length > 0 ? <BitacoraDialog proyectos={proyectos} /> : null}
       />
+
+      <InstallPrompt />
+      <OutboxPanel />
+      <OfflineSetup proyectos={proyectos} />
 
       {proyectos.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface-raised shadow-sm">

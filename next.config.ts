@@ -102,12 +102,10 @@ const nextConfig: NextConfig = {
   compress: true,
 
   experimental: {
-    serverActions: {
-      // La bitácora adjunta fotos (hasta 4 × 5MB) y CSV (hasta 2 × 10MB) en el
-      // mismo submit — ver src/services/storage.service.ts para los límites
-      // reales que se validan por archivo. El default de Next (1MB) los corta.
-      bodySizeLimit: "45mb",
-    },
+    // Sin `serverActions.bodySizeLimit`: ninguna Server Action recibe
+    // archivos. Los adjuntos de bitácora van directo del navegador a Storage
+    // con URL firmada (src/services/storage.service.ts), así que el límite
+    // por defecto (1MB) alcanza y achica la superficie de abuso.
     /**
      * Reescribe los imports de barril a imports directos. `lucide-react`
      * exporta más de mil iconos desde un solo índice: sin esto, cada
@@ -147,6 +145,16 @@ const nextConfig: NextConfig = {
         // Todas las rutas, incluidas las de assets.
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        // El service worker (public/sw.js) nunca se sirve de un caché HTTP:
+        // si quedara una versión vieja, el modo sin conexión seguiría
+        // apuntando a archivos de un deploy anterior.
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+        ],
       },
     ];
   },

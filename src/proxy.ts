@@ -59,8 +59,9 @@ export const config = {
    * (robots.txt, sitemap.xml, el manifest y los iconos): cada request que pasa
    * por acá hace una llamada a Supabase para revalidar el token, y hacerla
    * para servir un archivo público es latencia regalada en el rastreo.
+   * `sw.js` (el service worker) tampoco necesita sesión.
    */
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|apple-icon|opengraph-image|icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|apple-icon|opengraph-image|icon|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest)$).*)",
   ],
 };

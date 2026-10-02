@@ -81,6 +81,58 @@ la UI.
      expone una URL pública — toda lectura pasa por `getSignedUrls()`
      (`src/services/storage.service.ts`), que expiran en 1 hora.
 
+## Bitácora: sincronización idempotente (base del modo offline)
+
+Crear una entrada de bitácora **no** es una Server Action: va por el Route Handler
+`/api/sync/bitacora` ([route.ts](./src/app/api/sync/bitacora/route.ts) →
+[bitacora-sync.service.ts](./src/services/bitacora-sync.service.ts); lado navegador en
+[src/lib/bitacora-sync.ts](./src/lib/bitacora-sync.ts)). El id de una Server Action cambia en
+cada deploy y un envío encolado en un celular sin señal fallaría.
+
+- Los ids (entrada, fotos, CSV) los genera el cliente; reenviar el mismo manifiesto nunca
+  duplica. No introducir ids ni rutas de Storage aleatorias del lado del servidor.
+- Los archivos van del navegador directo a Storage con URL firmada de subida; el servidor
+  verifica tamaño/tipo de lo que llegó antes de registrarlo.
+- Códigos de estado: 401 = pedir login y reintentar (nunca descartar), 403/422 = no
+  reintentar, 5xx/red = reintentar.
+
+**Cola offline** ([src/lib/bitacora-outbox.ts](./src/lib/bitacora-outbox.ts), IndexedDB):
+toda entrada se guarda primero en el dispositivo y se borra de ahí solo cuando el servidor
+confirma. `OutboxProvider` (layout del panel, solo roles con bitácora) la procesa al abrir,
+al volver la señal, al volver a la pestaña y cada 30 s, con espera creciente entre
+reintentos. Una sola pestaña sincroniza a la vez (Web Locks).
+
+- Cada entrada lleva `ownerId`: nunca enviar la cola de un usuario con la sesión de otro.
+- El schema de la entrada vive en [src/lib/bitacora-schema.ts](./src/lib/bitacora-schema.ts)
+  (sin acceso a datos) porque el navegador valida antes de encolar: una entrada inválida
+  quedaría trabada en la cola sin nadie que avise.
+- No llamar `router.refresh()` sin confirmar que hubo red: si el refresco falla, Next cae a
+  una navegación completa y muestra la página de error del navegador.
+
+**Abrir sin señal** — `/campo` ([src/app/campo/](./src/app/campo/)) es una captura de
+bitácora **estática** que el service worker ([public/sw.js](./public/sw.js), escrito a mano)
+guarda en caché. Cualquier navegación que falle o tarde más de 10 s redirige ahí.
+
+- `/campo` no puede depender de la sesión ni del servidor: usuario y proyectos los deja en
+  IndexedDB `OfflineSetup` (layout del panel y `/bitacora`) cada vez que se abre con señal.
+  Cerrar sesión los borra (la cola no).
+- El service worker no guarda en caché páginas del panel ni datos: solo `/campo` y sus
+  `/_next/static`. No ampliarlo a páginas con datos privados.
+- Componentes compartidos entre el panel y `/campo`: [src/components/offline/](./src/components/offline/).
+- Solo se registra en producción. Para probar: `next build && next start`, abrir `/bitacora`
+  con sesión, apagar la red y recargar.
+
+**Fotos** — se comprimen en el dispositivo antes de encolarlas
+([src/lib/image-compression.ts](./src/lib/image-compression.ts): 1920 px, JPEG 0.8). El
+límite de 5 MB se valida **después** de comprimir. Se conserva el EXIF del original (fecha,
+GPS: respaldo de dónde y cuándo se tomó) con la orientación en 1, porque la rotación ya va en
+los píxeles. Si el navegador no puede decodificarla (HEIC fuera de Safari) se sube el original.
+
+**Instalación** — `InstallPrompt` invita a instalar la app en pantallas táctiles. Importa más
+que lo estético: iOS borra IndexedDB (la cola) de un sitio sin uso en 7 días, pero no de una
+app instalada. El manifest arranca en `/bitacora` con `id: "/"` (no cambiar el `id`: una
+instalación existente pasaría a verse como otra app).
+
 ## SEO del sitio público
 
 Todo lo que leen los buscadores se genera desde `src/config/site.ts`; no hay metadata

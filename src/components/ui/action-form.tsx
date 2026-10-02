@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { startTransition, useActionState, useEffect, useRef } from "react";
 import { Button } from "./button";
 import { DialogActions, CancelButton } from "./dialog";
 import { useToast } from "./toast";
@@ -31,19 +31,32 @@ export function ActionForm({
   const [state, formAction, pending] = useActionState(action, idleFormState);
   const toast = useToast();
   const handled = useRef<FormState | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (state === handled.current || state.status !== "success") return;
     handled.current = state;
+    formRef.current?.reset();
     toast({ tone: "success", title: toastTitle ?? "Listo", description: state.message });
     onDone?.();
   }, [state, onDone, toast, toastTitle]);
+
+  // Con `<form action={fn}>`, React 19 vacía el formulario al terminar la
+  // acción aunque devuelva error: el usuario perdía lo escrito (y los
+  // adjuntos) por un campo mal llenado o un corte de señal. Enviando desde
+  // `onSubmit` el formulario conserva los valores; se limpia solo al tener
+  // éxito (efecto de arriba).
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    startTransition(() => formAction(formData));
+  }
 
   const fieldErrors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
   const formError = state.status === "error" && !state.fieldErrors ? state.message : null;
 
   return (
-    <form action={formAction} data-cy={dataCy} className="flex flex-col gap-4">
+    <form ref={formRef} onSubmit={handleSubmit} data-cy={dataCy} className="flex flex-col gap-4">
       {children(fieldErrors)}
 
       {formError && (

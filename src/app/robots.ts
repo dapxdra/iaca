@@ -18,6 +18,9 @@ export default function robots(): MetadataRoute.Robots {
   const privatePaths = [
     ...dashboardNav.map((item) => `${item.href}/`),
     "/login",
+    // Captura de bitácora sin conexión: no está en dashboardNav (ver
+    // offlineCaptureContent en config/site.ts), así que se agrega a mano.
+    "/campo",
     // Server Actions y cualquier endpoint interno no deben rastrearse.
     "/api/",
   ];

@@ -713,3 +713,41 @@ export const authContent = {
   genericErrorMessage: "Correo o contraseña incorrectos.",
   signOutLabel: "Cerrar sesión",
 } as const;
+
+/**
+ * Pantalla de captura de bitácora sin conexión (`/campo`, ver
+ * src/app/campo/page.tsx). Abre aunque no haya señal gracias al service
+ * worker (public/sw.js); por eso no está en `dashboardNav`: no pasa por el
+ * proxy de sesión ni por el layout del panel.
+ */
+export const offlineCaptureContent = {
+  title: "Captura de campo",
+  description:
+    "Registrá la bitácora aunque no haya señal. Se guarda en este dispositivo y se envía sola cuando vuelve la conexión.",
+  loading: "Cargando…",
+  noSessionTitle: "Iniciá sesión con señal primero",
+  noSessionDescription:
+    "Para capturar sin conexión, este dispositivo tiene que haber abierto el panel con señal al menos una vez.",
+  noSessionAction: "Iniciar sesión",
+  noProyectosTitle: "No hay proyectos guardados en este dispositivo",
+  noProyectosDescription: "Abrí la Bitácora con señal una vez para descargarlos.",
+  userLabel: "Registrando como",
+  offlineLabel: "Sin conexión",
+  onlineLabel: "Con conexión",
+  panelLabel: "Ir al panel",
+} as const;
+
+/**
+ * Aviso para instalar la app en el teléfono (src/components/offline/install-prompt.tsx).
+ * Instalada, abre sin señal desde la pantalla de inicio, y iOS no borra la
+ * cola de entradas pendientes tras 7 días sin uso (sí lo hace con un sitio
+ * abierto en Safari).
+ */
+export const installPromptContent = {
+  title: "Instalá la app en tu teléfono",
+  description:
+    "Abre sin señal desde la pantalla de inicio y el teléfono no borra las entradas que esperan sincronizarse.",
+  iosInstructions: "En Safari, tocá Compartir y después “Agregar a inicio”.",
+  installLabel: "Instalar",
+  dismissLabel: "Ahora no",
+} as const;

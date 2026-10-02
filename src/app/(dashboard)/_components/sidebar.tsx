@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { authContent, dashboardNavForRole, defaultRouteForRole, siteConfig, type UserRole } from "@/config/site";
 import { signOutAction } from "../actions";
+import { OutboxStatus } from "@/components/offline/outbox-status";
+import { useOutbox } from "@/components/offline/outbox-provider";
+import { clearOfflineSession } from "@/lib/bitacora-outbox";
 
 const ICONS: Record<string, LucideIcon> = {
   proyectos: FolderKanban,
@@ -61,6 +64,7 @@ function SidebarContent({
 }) {
   const pathname = usePathname();
   const nav = dashboardNavForRole(role);
+  const pendientes = useOutbox()?.entries.length ?? 0;
 
   return (
     <>
@@ -110,7 +114,11 @@ function SidebarContent({
         })}
       </nav>
 
-      <div className="mt-4 flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.03] p-2.5">
+      <div className="mt-4">
+        <OutboxStatus onNavigate={onNavigate} />
+      </div>
+
+      <div className="mt-2 flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.03] p-2.5">
         <span
           aria-hidden="true"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent/20 text-[0.8125rem] font-semibold text-paper"
@@ -123,7 +131,24 @@ function SidebarContent({
           </p>
           <p className="text-[0.8125rem] text-paper/50">{ROLE_LABEL[role] ?? role}</p>
         </div>
-        <form action={signOutAction}>
+        {/* La cola no se borra al salir (queda ligada a este usuario y se envía
+            cuando vuelva a entrar), pero conviene avisar: si otra persona usa
+            el teléfono mientras tanto, esas entradas no van a salir. */}
+        <form
+          action={signOutAction}
+          onSubmit={(e) => {
+            if (
+              pendientes > 0 &&
+              !window.confirm(
+                `Tenés ${pendientes} entrada(s) de bitácora sin sincronizar. Quedan guardadas en este dispositivo y se enviarán cuando vuelvas a iniciar sesión. ¿Cerrar sesión igual?`
+              )
+            ) {
+              e.preventDefault();
+              return;
+            }
+            clearOfflineSession().catch(() => {});
+          }}
+        >
           <button
             type="submit"
             data-cy="sign-out"
@@ -192,6 +217,9 @@ export function DashboardSidebar({
         >
           {siteConfig.name}
         </Link>
+        <div className="ml-auto mr-2 min-w-0">
+          <OutboxStatus />
+        </div>
         <button
           type="button"
           onClick={() => setIsOpen(true)}

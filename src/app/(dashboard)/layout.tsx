@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { requireProfile } from "@/lib/auth";
+import { isFieldStaff, requireProfile } from "@/lib/auth";
 import { siteConfig } from "@/config/site";
 import { DashboardSidebar } from "./_components/sidebar";
+import { OutboxProvider } from "@/components/offline/outbox-provider";
+import { OfflineSetup } from "@/components/offline/offline-setup";
 
 /**
  * `noindex, nofollow` para todo el panel. Se hereda a cada página de abajo, así
@@ -32,7 +34,7 @@ export default async function DashboardLayout({
 }) {
   const profile = await requireProfile();
 
-  return (
+  const shell = (
     // Columna en móvil (barra superior arriba, contenido debajo) y fila en
     // escritorio (barra lateral fija a la izquierda) — ver DashboardSidebar.
     <div className="flex min-h-svh flex-col bg-background lg:flex-row">
@@ -41,5 +43,15 @@ export default async function DashboardLayout({
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-8 lg:px-10">{children}</div>
       </main>
     </div>
+  );
+
+  // La cola offline de bitácora solo existe para quien registra bitácora.
+  return isFieldStaff(profile.role) ? (
+    <OutboxProvider userId={profile.userId}>
+      <OfflineSetup session={{ userId: profile.userId, fullName: profile.fullName }} />
+      {shell}
+    </OutboxProvider>
+  ) : (
+    shell
   );
 }

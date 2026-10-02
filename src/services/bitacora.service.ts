@@ -7,13 +7,12 @@
  * `trabajador_id` con `auth.uid()`; el trigger lo sella al insertar); el rol
  * `cliente` no tiene acceso a bitácora en absoluto.
  *
- * Fotos: se suben a Storage desde `src/services/storage.service.ts` (llamado
- * por la Server Action de creación, que necesita el id de la entrada recién
- * creada) — acá solo se leen de vuelta con URL firmada.
+ * Creación: la entrada y sus adjuntos se registran por
+ * `src/services/bitacora-sync.service.ts` (idempotente, pensado para
+ * conexión intermitente) — acá solo se listan y borran, y las fotos se leen
+ * de vuelta con URL firmada.
  */
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { emptyToUndefined } from "@/lib/form";
 import { BUCKETS, getSignedUrls } from "@/services/storage.service";
 
 export type BitacoraFoto = { id: string; url: string | null; descripcion: string | null };
@@ -41,33 +40,6 @@ const SELECT =
 type RawFoto = { id: string; storage_path: string; descripcion: string | null };
 type RawEntry = Omit<BitacoraEntry, "fotos"> & { fotos: RawFoto[] };
 
-const optionalText = z.preprocess(emptyToUndefined, z.string().trim().max(200).optional());
-const optionalTime = z.preprocess(
-  emptyToUndefined,
-  z
-    .string()
-    .regex(/^\d{2}:\d{2}$/, "Formato HH:MM")
-    .optional()
-);
-
-export const bitacoraSchema = z
-  .object({
-    proyecto_id: z.string().uuid("Seleccioná un proyecto"),
-    subproyecto_id: z.preprocess(emptyToUndefined, z.string().uuid().optional()),
-    fecha: z.string().date("Fecha inválida"),
-    hora_inicio: optionalTime,
-    hora_fin: optionalTime,
-    actividad: z.string().trim().min(3, "Requerido").max(1000),
-    equipo_utilizado: optionalText,
-    clima: optionalText,
-    observaciones: z.preprocess(emptyToUndefined, z.string().trim().max(2000).optional()),
-  })
-  .refine(
-    (v) => !v.hora_inicio || !v.hora_fin || v.hora_fin > v.hora_inicio,
-    { message: "La hora de fin debe ser posterior al inicio.", path: ["hora_fin"] }
-  );
-
-export type BitacoraInput = z.infer<typeof bitacoraSchema>;
 
 /** Entradas más recientes; si se pasa `proyectoId`, solo las de ese proyecto. */
 export async function listBitacora(opts: {
@@ -100,24 +72,6 @@ export async function listBitacora(opts: {
       url: urls.get(f.storage_path) ?? null,
     })),
   }));
-}
-
-/** Crea la entrada y devuelve su id (lo necesita la Server Action para subir fotos/CSV). */
-export async function createBitacora(
-  input: BitacoraInput,
-  trabajadorId: string
-): Promise<string> {
-  const data = bitacoraSchema.parse(input);
-  const supabase = await createClient();
-  // trabajador_id se pasa explícito (y además lo sella el trigger
-  // stamp_bitacora_trabajador como defensa si se inserta por fuera de la app).
-  const { data: row, error } = await supabase
-    .from("bitacora_campo")
-    .insert({ ...data, trabajador_id: trabajadorId })
-    .select("id")
-    .single();
-  if (error || !row) throw new Error("No se pudo registrar la entrada de bitácora.");
-  return row.id;
 }
 
 export async function deleteBitacora(id: string): Promise<void> {

@@ -84,6 +84,9 @@ export const metadata: Metadata = {
   // archivo (src/app/favicon.ico y src/app/apple-icon.png). Declararlos acá
   // también sobreescribiría esa convención, así que no se declaran.
   manifest: "/manifest.webmanifest",
+  // Instalada desde Safari ("Agregar a inicio"), abre a pantalla completa y
+  // con el nombre corto, no como una pestaña con barra de direcciones.
+  appleWebApp: { capable: true, title: siteConfig.name, statusBarStyle: "default" },
   /**
    * Verificación de propiedad en Search Console. Dejar vacío no rompe nada;
    * el método recomendado es el registro DNS TXT, que no requiere tocar código.
