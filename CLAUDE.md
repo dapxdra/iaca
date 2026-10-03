@@ -13,6 +13,11 @@ patrón de layout usa cada tipo de página. Generado con la skill `ui-ux-pro-max
 (`.claude/skills/ui-ux-pro-max/`) — consultar sus datasets CSV directamente para dudas de
 estilo/tipografía/UX que no cubra el Master (no requieren Python).
 
+**Logo**: [src/components/brand-logo.tsx](./src/components/brand-logo.tsx) — SVG en línea con
+`currentColor`, así toma el color del texto (navy sobre papel, papel sobre tinta y en modo
+oscuro). Siempre junto al nombre en texto; no usar un `<img>` del logo. Los iconos
+(`favicon.ico`, `apple-icon.png`, `public/icon*.png`) se generaron desde `LOGO_PATH`.
+
 ## Arquitectura (SOA por capas)
 
 ```
@@ -172,8 +177,8 @@ Reglas:
 
 `src/components/contact-form.tsx` → `src/app/actions.ts` → `src/services/contacto.service.ts`.
 
-Es la **única excepción** a la regla de usar siempre el cliente de sesión de Supabase: la
-escritura usa `createAdminClient()` (service role) porque `contacto_mensajes` no tiene
+Es una de las **dos excepciones** (la otra: notificaciones, abajo) a la regla de usar siempre
+el cliente de sesión de Supabase: la escritura usa `createAdminClient()` (service role) porque `contacto_mensajes` no tiene
 política de insert en RLS **para nadie**. Eso es deliberado — si `anon` pudiera insertar, un
 bot llamaría la API REST de Supabase directamente y se saltaría la validación, el honeypot y
 el límite por IP. Sin política, la única puerta es la Server Action, que sí valida.
@@ -188,6 +193,28 @@ claro, y así está declarado en la política de privacidad.
 
 Los envíos sospechosos se guardan marcados como `spam` en vez de descartarse: si el filtro
 se equivoca, la solicitud legítima sigue recuperable en la bandeja.
+
+## Notificaciones de proyectos y trámites sin movimiento
+
+Vercel Cron ([vercel.json](./vercel.json), 13:00 UTC = 7:00 en Costa Rica) →
+[/api/cron/alertas](./src/app/api/cron/alertas/route.ts) →
+[alertas.service.ts](./src/services/alertas.service.ts). Un admin puede correr lo mismo con
+"Revisar ahora" en `/notificaciones`.
+
+- **Qué es "sin movimiento"** se calcula en vistas, no se almacena
+  (`supabase/migrations/0007_notificaciones.sql`): un proyecto, desde lo último entre su
+  cambio de estado (`estado_cambiado_at`, lo sella un trigger) y su última bitácora; un
+  trámite, desde lo último entre envío, revisión y cambio de estado. No usar `updated_at`:
+  cambia con cualquier edición.
+- **Umbrales** en `alertas_config` (fila única, la edita solo admin). El panel de
+  `/tramites` usa el mismo umbral por defecto, para que muestre lo mismo que se avisa.
+- **Service role**: `notificaciones` no tiene política de insert; solo el job escribe. El
+  usuario lee las suyas y solo puede actualizar `leida_at` (grant por columna).
+- **Destinatarios**: todos los admin + el responsable si es admin/oficina. No se repite el
+  aviso de lo mismo a la misma persona antes de `recordatorio_dias`.
+- **Correo**: un resumen por persona vía Resend ([src/lib/email.ts](./src/lib/email.ts)).
+  Sin `RESEND_API_KEY` la bandeja interna sigue funcionando. Todo texto del usuario va con
+  `escapeHtml` en el HTML del correo.
 
 ## Colores de estado: usar los tokens, no los de Tailwind
 

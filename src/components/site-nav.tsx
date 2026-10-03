@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { homeContent, publicNav, siteConfig } from "@/config/site";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function SiteNav() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,8 +29,9 @@ export function SiteNav() {
         <Link
           href="/"
           data-cy="site-name"
-          className="font-heading text-lg font-semibold tracking-tight transition-colors hover:text-primary"
+          className="flex items-center gap-2.5 font-heading text-lg font-semibold tracking-tight transition-colors hover:text-primary"
         >
+          <BrandLogo className="h-8 w-8 text-primary" />
           {siteConfig.name}
         </Link>
 

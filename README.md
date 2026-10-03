@@ -147,7 +147,8 @@ Implementado y probado contra la base de datos real:
 | Flujo de estados Contacto→Campo→Cálculo→Dibujo→Entrega (+ transiciones válidas) | ✅ |
 | **Subproyectos** — alta/baja desde la ficha del proyecto | ✅ |
 | **Bitácora de campo** — alta/listado + adjuntar **fotos y CSV** (rol `campo`, ve todo, edita lo suyo) | ✅ |
-| **Trámites** — CRUD + panel de alertas "sin revisión hace N días" (admin/oficina) | ✅ |
+| **Trámites** — CRUD + panel de alertas "sin movimiento hace N días" (admin/oficina) | ✅ |
+| **Notificaciones** — proyectos y trámites sin movimiento: bandeja interna + resumen diario por correo (Resend + Vercel Cron), umbrales editables por admin | ✅ |
 | **Cobros** — definir monto, registrar/eliminar pagos, saldo automático (admin/oficina) | ✅ |
 | **Reportes KPI** — tarjetas, gráficos por zona, tablas (admin/oficina) | ✅ |
 | **Mis proyectos** — portal de solo lectura para el rol `cliente` | ✅ |
@@ -181,7 +182,6 @@ Pendiente (siguiente fase — ver `docs/REQUIREMENTS.md` §11):
 - **Google Maps** en la ficha de proyecto (`ubicacion geography` ya está en el esquema).
 - Subida/descarga de **DWG/PDF** (mismo mecanismo que el CSV, falta la UI).
 - Pantalla de **gestión de usuarios** (hoy se administran desde el panel de Supabase Auth).
-- Notificaciones por correo.
 
 ### Usuarios de prueba
 
@@ -249,6 +249,9 @@ supabase/migrations/
   0006_contacto_mensajes.sql     → bandeja del formulario público. RLS sin política de
                                    insert a propósito: solo escribe la Server Action con la
                                    service role, para que todo envío pase por el anti-spam
+  0007_notificaciones.sql        → estado_cambiado_at, alertas_config (umbrales), vistas de
+                                   días sin movimiento y bandeja `notificaciones` (solo el
+                                   job diario inserta, con service role)
 ```
 
 Convenciones (arquitectura SOA, parametrización, `data-cy`, seguridad): ver [`CLAUDE.md`](./CLAUDE.md).

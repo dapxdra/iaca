@@ -3,11 +3,8 @@ import { AlertTriangle, FileStack, ShieldCheck } from "lucide-react";
 import { dashboardPages } from "@/config/site";
 import { requireRole, isStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
-import {
-  listTramites,
-  listAlertas,
-  UMBRAL_ALERTA_DIAS_DEFAULT,
-} from "@/services/tramites.service";
+import { listTramites, listAlertas } from "@/services/tramites.service";
+import { getAlertasConfig } from "@/services/notificaciones.service";
 import { listProyectoOptions } from "@/services/proyectos.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { TableWrap, Th, Td } from "@/components/ui/table";
@@ -19,7 +16,7 @@ import { deleteTramiteAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const UMBRALES = [15, 30, 45];
+const UMBRALES_FIJOS = [15, 30, 45];
 
 export default async function TramitesPage({
   searchParams,
@@ -31,9 +28,11 @@ export default async function TramitesPage({
     requireRole(["admin", "oficina"]),
   ]);
   const canWrite = isStaff(profile.role);
-  const umbralDias = UMBRALES.includes(Number(umbral))
-    ? Number(umbral)
-    : UMBRAL_ALERTA_DIAS_DEFAULT;
+  // El umbral por defecto es el mismo que usan las notificaciones, así el
+  // panel muestra exactamente lo que se está avisando.
+  const { tramite_dias } = await getAlertasConfig();
+  const UMBRALES = [...new Set([...UMBRALES_FIJOS, tramite_dias])].sort((a, b) => a - b);
+  const umbralDias = UMBRALES.includes(Number(umbral)) ? Number(umbral) : tramite_dias;
 
   const [alertas, tramites, proyectos] = await Promise.all([
     listAlertas(umbralDias),
@@ -63,7 +62,7 @@ export default async function TramitesPage({
               <ShieldCheck className="h-4 w-4 text-success" aria-hidden="true" />
             )}
             <h2 className="text-body font-semibold text-foreground">
-              Sin revisión hace {umbralDias}+ días
+              Sin movimiento hace {umbralDias}+ días
               <span className="ml-1.5 tabular-nums text-muted-foreground">({alertas.length})</span>
             </h2>
           </div>
@@ -113,7 +112,8 @@ export default async function TramitesPage({
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <span className="text-small text-muted-foreground">
-                      envío {formatDate(a.fecha_envio)}
+                      {/* Los pendientes también entran al panel y aún no tienen envío. */}
+                      {a.fecha_envio ? `envío ${formatDate(a.fecha_envio)}` : "sin enviar"}
                     </span>
                     <span className="rounded-full border border-warning/40 bg-warning/12 px-2 py-0.5 text-small font-semibold tabular-nums text-warning">
                       {a.dias_sin_revision} días

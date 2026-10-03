@@ -9,6 +9,7 @@ import {
   publicNav,
   siteConfig,
 } from "@/config/site";
+import { BrandLogo } from "@/components/brand-logo";
 
 /**
  * Footer del sitio público, compartido por la home y las páginas legales.
@@ -24,7 +25,10 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-6 py-14">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
-            <span className="font-heading text-h3 font-semibold">{businessInfo.legalName}</span>
+            <span className="flex items-center gap-3 font-heading text-h3 font-semibold">
+              <BrandLogo className="h-10 w-10" />
+              {businessInfo.legalName}
+            </span>
             <p className="mt-3 max-w-sm text-small text-paper/75">{footerContent.tagline}</p>
           </div>
 

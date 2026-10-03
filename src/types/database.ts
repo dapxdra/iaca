@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      alertas_config: {
+        Row: {
+          correo_activo: boolean
+          id: boolean
+          proyecto_dias: number
+          recordatorio_dias: number
+          tramite_dias: number
+          updated_at: string
+        }
+        Insert: {
+          correo_activo?: boolean
+          id?: boolean
+          proyecto_dias?: number
+          recordatorio_dias?: number
+          tramite_dias?: number
+          updated_at?: string
+        }
+        Update: {
+          correo_activo?: boolean
+          id?: boolean
+          proyecto_dias?: number
+          recordatorio_dias?: number
+          tramite_dias?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       archivos_proyecto: {
         Row: {
           created_at: string
@@ -300,6 +327,73 @@ export type Database = {
         }
         Relationships: []
       }
+      notificaciones: {
+        Row: {
+          correo_enviado_at: string | null
+          created_at: string
+          dias: number
+          enlace: string
+          id: string
+          leida_at: string | null
+          mensaje: string
+          proyecto_id: string
+          tipo: Database["public"]["Enums"]["notificacion_tipo"]
+          titulo: string
+          tramite_id: string | null
+          usuario_id: string
+        }
+        Insert: {
+          correo_enviado_at?: string | null
+          created_at?: string
+          dias: number
+          enlace: string
+          id?: string
+          leida_at?: string | null
+          mensaje: string
+          proyecto_id: string
+          tipo: Database["public"]["Enums"]["notificacion_tipo"]
+          titulo: string
+          tramite_id?: string | null
+          usuario_id: string
+        }
+        Update: {
+          correo_enviado_at?: string | null
+          created_at?: string
+          dias?: number
+          enlace?: string
+          id?: string
+          leida_at?: string | null
+          mensaje?: string
+          proyecto_id?: string
+          tipo?: Database["public"]["Enums"]["notificacion_tipo"]
+          titulo?: string
+          tramite_id?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificaciones_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "proyectos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificaciones_tramite_id_fkey"
+            columns: ["tramite_id"]
+            isOneToOne: false
+            referencedRelation: "tramites_gubernamentales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificaciones_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pagos: {
         Row: {
           created_at: string
@@ -410,6 +504,7 @@ export type Database = {
           descripcion: string | null
           distrito: string | null
           estado: Database["public"]["Enums"]["proyecto_estado"]
+          estado_cambiado_at: string
           fecha_entrega_real: string | null
           fecha_estimada_entrega: string | null
           fecha_inicio: string | null
@@ -432,6 +527,7 @@ export type Database = {
           descripcion?: string | null
           distrito?: string | null
           estado?: Database["public"]["Enums"]["proyecto_estado"]
+          estado_cambiado_at?: string
           fecha_entrega_real?: string | null
           fecha_estimada_entrega?: string | null
           fecha_inicio?: string | null
@@ -454,6 +550,7 @@ export type Database = {
           descripcion?: string | null
           distrito?: string | null
           estado?: Database["public"]["Enums"]["proyecto_estado"]
+          estado_cambiado_at?: string
           fecha_entrega_real?: string | null
           fecha_estimada_entrega?: string | null
           fecha_inicio?: string | null
@@ -653,6 +750,7 @@ export type Database = {
           created_at: string
           entidad: string
           estado: Database["public"]["Enums"]["tramite_estado"]
+          estado_cambiado_at: string | null
           fecha_envio: string | null
           fecha_ultima_revision: string | null
           id: string
@@ -667,6 +765,7 @@ export type Database = {
           created_at?: string
           entidad: string
           estado?: Database["public"]["Enums"]["tramite_estado"]
+          estado_cambiado_at?: string | null
           fecha_envio?: string | null
           fecha_ultima_revision?: string | null
           id?: string
@@ -681,6 +780,7 @@ export type Database = {
           created_at?: string
           entidad?: string
           estado?: Database["public"]["Enums"]["tramite_estado"]
+          estado_cambiado_at?: string | null
           fecha_envio?: string | null
           fecha_ultima_revision?: string | null
           id?: string
@@ -842,23 +942,42 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_proyectos_sin_movimiento: {
+        Row: {
+          codigo: string | null
+          dias_sin_movimiento: number | null
+          estado: Database["public"]["Enums"]["proyecto_estado"] | null
+          estado_cambiado_at: string | null
+          id: string | null
+          nombre: string | null
+          responsable_id: string | null
+          ultima_bitacora: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proyectos_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vw_tramites_sin_revision: {
         Row: {
-          created_at: string | null
           dias_sin_revision: number | null
           entidad: string | null
           estado: Database["public"]["Enums"]["tramite_estado"] | null
           fecha_envio: string | null
           fecha_ultima_revision: string | null
           id: string | null
-          notas: string | null
           numero_expediente: string | null
           proyecto_codigo: string | null
           proyecto_id: string | null
           proyecto_nombre: string | null
+          proyecto_responsable_id: string | null
           responsable_id: string | null
           tipo_tramite: string | null
-          updated_at: string | null
         }
         Relationships: [
           {
@@ -1803,6 +1922,7 @@ export type Database = {
         | "transferencia"
         | "cheque"
         | "otro"
+      notificacion_tipo: "proyecto_sin_movimiento" | "tramite_sin_movimiento"
       proyecto_estado:
         | "contacto"
         | "campo"
@@ -1965,6 +2085,7 @@ export const Constants = {
         "cheque",
         "otro",
       ],
+      notificacion_tipo: ["proyecto_sin_movimiento", "tramite_sin_movimiento"],
       proyecto_estado: [
         "contacto",
         "campo",

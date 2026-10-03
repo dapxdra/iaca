@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { isFieldStaff, requireProfile } from "@/lib/auth";
+import { isFieldStaff, isStaff, requireProfile } from "@/lib/auth";
+import { countNoLeidas } from "@/services/notificaciones.service";
 import { siteConfig } from "@/config/site";
 import { DashboardSidebar } from "./_components/sidebar";
 import { OutboxProvider } from "@/components/offline/outbox-provider";
@@ -33,12 +34,14 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const profile = await requireProfile();
+  // Solo admin/oficina reciben notificaciones (ver alertas.service.ts).
+  const noLeidas = isStaff(profile.role) ? await countNoLeidas() : 0;
 
   const shell = (
     // Columna en móvil (barra superior arriba, contenido debajo) y fila en
     // escritorio (barra lateral fija a la izquierda) — ver DashboardSidebar.
     <div className="flex min-h-svh flex-col bg-background lg:flex-row">
-      <DashboardSidebar fullName={profile.fullName} role={profile.role} />
+      <DashboardSidebar fullName={profile.fullName} role={profile.role} noLeidas={noLeidas} />
       <main id="contenido" className="min-w-0 flex-1">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-8 lg:px-10">{children}</div>
       </main>

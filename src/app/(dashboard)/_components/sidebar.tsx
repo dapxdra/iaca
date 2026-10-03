@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Bell,
   ClipboardList,
   FileStack,
   FolderKanban,
@@ -20,6 +21,7 @@ import { signOutAction } from "../actions";
 import { OutboxStatus } from "@/components/offline/outbox-status";
 import { useOutbox } from "@/components/offline/outbox-provider";
 import { clearOfflineSession } from "@/lib/bitacora-outbox";
+import { BrandLogo } from "@/components/brand-logo";
 
 const ICONS: Record<string, LucideIcon> = {
   proyectos: FolderKanban,
@@ -28,6 +30,7 @@ const ICONS: Record<string, LucideIcon> = {
   bitacora: ClipboardList,
   tramites: FileStack,
   kpi: LayoutGrid,
+  notificaciones: Bell,
   "mis-proyectos": FolderKanban,
 };
 
@@ -56,10 +59,12 @@ function initials(name: string) {
 function SidebarContent({
   fullName,
   role,
+  noLeidas,
   onNavigate,
 }: {
   fullName: string;
   role: UserRole;
+  noLeidas: number;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -72,8 +77,9 @@ function SidebarContent({
         href={defaultRouteForRole(role)}
         data-cy="site-name"
         onClick={onNavigate}
-        className="mb-6 flex items-center gap-2 rounded-md px-2 py-1 text-h3 font-semibold tracking-tight transition-colors hover:text-paper/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper/40"
+        className="mb-6 flex items-center gap-2.5 rounded-md px-2 py-1 text-h3 font-semibold tracking-tight transition-colors hover:text-paper/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper/40"
       >
+        <BrandLogo className="h-8 w-8" />
         {siteConfig.name}
       </Link>
 
@@ -109,6 +115,15 @@ function SidebarContent({
                 aria-hidden="true"
               />
               {item.label}
+              {item.key === "notificaciones" && noLeidas > 0 && (
+                <span
+                  data-cy="nav-notificaciones-count"
+                  className="ml-auto min-w-5 rounded-full bg-accent px-1.5 text-center text-[0.75rem] font-semibold leading-5 tabular-nums text-paper"
+                >
+                  {noLeidas > 99 ? "99+" : noLeidas}
+                  <span className="sr-only"> sin leer</span>
+                </span>
+              )}
             </Link>
           );
         })}
@@ -179,9 +194,11 @@ function SidebarContent({
 export function DashboardSidebar({
   fullName,
   role,
+  noLeidas,
 }: {
   fullName: string;
   role: UserRole;
+  noLeidas: number;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -213,13 +230,28 @@ export function DashboardSidebar({
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-ink/60 bg-ink px-4 py-3 text-paper lg:hidden">
         <Link
           href={defaultRouteForRole(role)}
-          className="rounded-md px-1 text-h3 font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper/40"
+          className="flex items-center gap-2 rounded-md px-1 text-h3 font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper/40"
         >
+          <BrandLogo className="h-7 w-7" />
           {siteConfig.name}
         </Link>
         <div className="ml-auto mr-2 min-w-0">
           <OutboxStatus />
         </div>
+        {noLeidas > 0 && (
+          <Link
+            href="/notificaciones"
+            data-cy="mobile-notificaciones"
+            aria-label={`Notificaciones: ${noLeidas} sin leer`}
+            className="relative mr-1 grid h-11 w-11 place-items-center rounded-md text-paper transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper/40"
+          >
+            <Bell className="h-5 w-5" aria-hidden="true" />
+            <span
+              aria-hidden="true"
+              className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-ink"
+            />
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => setIsOpen(true)}
@@ -263,6 +295,7 @@ export function DashboardSidebar({
             <SidebarContent
               fullName={fullName}
               role={role}
+              noLeidas={noLeidas}
               onNavigate={() => setIsOpen(false)}
             />
           </aside>
@@ -271,7 +304,7 @@ export function DashboardSidebar({
 
       {/* Panel fijo — solo escritorio */}
       <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col border-r border-ink/60 bg-ink p-4 text-paper lg:flex">
-        <SidebarContent fullName={fullName} role={role} />
+        <SidebarContent fullName={fullName} role={role} noLeidas={noLeidas} />
       </aside>
     </>
   );

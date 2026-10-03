@@ -123,6 +123,7 @@ export const dashboardNav: DashboardNavItem[] = [
   { key: "bitacora", href: "/bitacora", label: "Bitácora de campo" },
   { key: "tramites", href: "/tramites", label: "Trámites" },
   { key: "kpi", href: "/kpi", label: "Reportes KPI" },
+  { key: "notificaciones", href: "/notificaciones", label: "Notificaciones" },
   { key: "mis-proyectos", href: "/mis-proyectos", label: "Mis proyectos" },
 ];
 
@@ -132,8 +133,8 @@ export const dashboardNav: DashboardNavItem[] = [
  * Único lugar que hay que tocar para cambiar el alcance de un rol.
  */
 export const navKeysByRole: Record<UserRole, string[]> = {
-  admin: ["proyectos", "cobros", "clientes", "bitacora", "tramites", "kpi"],
-  oficina: ["proyectos", "cobros", "clientes", "bitacora", "tramites", "kpi"],
+  admin: ["proyectos", "cobros", "clientes", "bitacora", "tramites", "kpi", "notificaciones"],
+  oficina: ["proyectos", "cobros", "clientes", "bitacora", "tramites", "kpi", "notificaciones"],
   // Campo solo hace bitácora de campo (docs/REQUIREMENTS.md sección 3).
   campo: ["bitacora"],
   // Cliente es de solo lectura sobre sus propios proyectos.
@@ -196,6 +197,12 @@ export const dashboardPages: Record<string, DashboardPageContent> = {
     description:
       "Indicadores por proyecto, zona y trabajador (tiempos de ciclo, proyectos a tiempo, volumen por zona).",
     docsRef: "docs/REQUIREMENTS.md sección 4.6",
+  },
+  notificaciones: {
+    title: "Notificaciones",
+    description:
+      "Avisos de proyectos y trámites que llevan demasiado tiempo sin movimiento. También llegan por correo una vez al día.",
+    docsRef: "docs/REQUIREMENTS.md sección 10",
   },
   "mis-proyectos": {
     title: "Mis proyectos",
@@ -750,4 +757,39 @@ export const installPromptContent = {
   iosInstructions: "En Safari, tocá Compartir y después “Agregar a inicio”.",
   installLabel: "Instalar",
   dismissLabel: "Ahora no",
+} as const;
+
+/**
+ * Textos de las notificaciones de proyectos/trámites sin movimiento, tanto de
+ * la bandeja interna como del correo diario (src/services/alertas.service.ts).
+ * Los estados llegan ya traducidos (ej. "Campo", "En revisión").
+ */
+export const alertasContent = {
+  proyectoTitulo: (codigo: string, dias: number) => `${codigo} sin movimiento hace ${dias} días`,
+  proyectoMensaje: (nombre: string, estado: string, dias: number) =>
+    `«${nombre}» lleva ${dias} días en ${estado}, sin cambio de estado ni bitácora de campo.`,
+  tramiteTitulo: (entidad: string, tipo: string, dias: number) =>
+    `Trámite sin movimiento hace ${dias} días: ${entidad} · ${tipo}`,
+  tramiteMensaje: (codigo: string, estado: string, dias: number) =>
+    `${codigo}: lleva ${dias} días en estado ${estado}, sin revisión ni cambio registrado.`,
+  emailAsunto: (total: number) =>
+    total === 1
+      ? `${siteConfig.name}: 1 proyecto o trámite sin movimiento`
+      : `${siteConfig.name}: ${total} proyectos o trámites sin movimiento`,
+  emailSaludo: (nombre: string) => `Hola ${nombre},`,
+  emailIntro:
+    "Estos proyectos y trámites llevan más tiempo del esperado sin avanzar. Revisalos y actualizá su estado o registrá el seguimiento.",
+  emailVerLabel: "Abrir",
+  emailBandejaLabel: "Ver todas las notificaciones",
+  emailPie:
+    "Recibís este correo porque sos responsable o administrador en la plataforma. La frecuencia y los umbrales se ajustan en Notificaciones.",
+  configTitulo: "Configuración de alertas",
+  configDescripcion:
+    "Solo administradores. La revisión corre una vez al día y avisa al responsable y a los administradores.",
+  ejecutarLabel: "Revisar ahora",
+  marcarLeidaLabel: "Marcar como leída",
+  marcarTodasLabel: "Marcar todas como leídas",
+  vacioTitulo: "No hay notificaciones",
+  vacioNoLeidas: "Estás al día: nada pendiente de revisar.",
+  vacioTodas: "Cuando un proyecto o trámite se quede sin movimiento, el aviso aparece acá.",
 } as const;

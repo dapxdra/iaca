@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArrowRight, Check, Mail, MessageCircle } from "lucide-react";
+import { ArrowRight, Check, Mail, MessageCircle, Plus } from "lucide-react";
 import {
   buildWhatsAppUrl,
   confianzaContent,
@@ -223,15 +223,21 @@ export default function HomePage() {
                     data-cy={`faq-${item.key}`}
                     className="group rounded-lg border border-border bg-surface-raised px-5 shadow-xs transition-[border-color,box-shadow] duration-200 hover:border-border-strong open:shadow-sm"
                   >
-                    <summary className="flex cursor-pointer items-center justify-between gap-4 py-4 text-body font-semibold text-foreground marker:content-none [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--ring)]">
+                    <summary className="flex cursor-pointer items-start justify-between gap-4 py-4 text-body font-semibold text-foreground marker:content-none [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--ring)]">
                       {/* h3 dentro del summary: mantiene la jerarquía de
                           encabezados navegable para lectores de pantalla. */}
                       <h3 className="font-sans text-body font-semibold">{item.pregunta}</h3>
+                      {/* Ícono y no el carácter "+": el glifo se ubica según la
+                          línea base de la fuente y no queda centrado en el
+                          círculo (al girar a "×" se notaba el descentrado).
+                          h-7 = alto de una línea de texto body, así queda
+                          alineado con la primera línea aunque la pregunta
+                          ocupe dos. */}
                       <span
                         aria-hidden="true"
-                        className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-transform duration-200 group-open:rotate-45"
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-[transform,color,border-color] duration-200 group-hover:border-border-strong group-hover:text-foreground group-open:rotate-45"
                       >
-                        +
+                        <Plus className="h-4 w-4" strokeWidth={2.25} />
                       </span>
                     </summary>
                     <p className="pb-5 pr-10 text-pretty text-body leading-relaxed text-muted-foreground">

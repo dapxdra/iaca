@@ -7,8 +7,11 @@ import type { Database } from "@/types/database";
  * el equivalente a ser superusuario de la base: solo se usa donde RLS no puede
  * expresar la regla.
  *
- * Único uso hoy: insertar en `contacto_mensajes` desde el formulario público.
- * Esa tabla no tiene política de insert para nadie (ver
+ * Usos:
+ *  - El job diario de alertas (src/services/alertas.service.ts): no hay un
+ *    usuario detrás, lee todos los proyectos y escribe en la bandeja de cada
+ *    persona; `notificaciones` no tiene política de insert para nadie.
+ *  - Insertar en `contacto_mensajes` desde el formulario público. Esa tabla no tiene política de insert para nadie (ver
  * supabase/migrations/0006_contacto_mensajes.sql), de modo que el único camino
  * de entrada es la Server Action que valida, aplica el honeypot y limita por
  * IP. Si `anon` pudiera insertar, un bot llamaría la API REST directamente y

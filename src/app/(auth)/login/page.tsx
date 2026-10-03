@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { authContent, siteConfig } from "@/config/site";
 import { LoginForm } from "./login-form";
+import { BrandLogo } from "@/components/brand-logo";
 
 /**
  * La pantalla de acceso no aporta nada a quien busca en Google y, si se
@@ -27,7 +28,8 @@ export default function LoginPage() {
         data-cy="login-card"
         className="animate-pop relative w-full max-w-sm rounded-xl border border-border bg-surface-raised p-8 shadow-lg"
       >
-        <span className="text-small font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        <span className="flex items-center gap-2.5 text-small font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          <BrandLogo className="h-9 w-9 text-primary" />
           {siteConfig.name}
         </span>
         <h1 className="mt-3 font-heading text-h3 font-semibold text-foreground">

@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { businessInfo, siteConfig } from "@/config/site";
+import { LOGO_PATH } from "@/components/brand-logo";
 
 /**
  * Imagen de vista previa (Open Graph / Twitter Card) generada en build, no un
@@ -94,7 +95,20 @@ export default function OpengraphImage() {
 
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 40, fontWeight: 700, color: PAPER, letterSpacing: -0.5 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 18,
+                fontSize: 40,
+                fontWeight: 700,
+                color: PAPER,
+                letterSpacing: -0.5,
+              }}
+            >
+              <svg width="56" height="56" viewBox="0 0 100 100">
+                <path fill={PAPER} fillRule="evenodd" d={LOGO_PATH} />
+              </svg>
               {businessInfo.legalName}
             </div>
             <div style={{ marginTop: 10, fontSize: 24, color: SLATE }}>

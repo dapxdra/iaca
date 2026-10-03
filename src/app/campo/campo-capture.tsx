@@ -16,6 +16,7 @@ import {
   type OfflineSession,
 } from "@/lib/bitacora-outbox";
 import { registerServiceWorker } from "@/lib/service-worker";
+import { BrandLogo } from "@/components/brand-logo";
 
 type State =
   | { status: "loading" }
@@ -75,7 +76,10 @@ export function CampoCapture() {
   return (
     <main id="contenido" data-cy="page-campo" className="min-h-svh bg-background">
       <header className="border-b border-ink/60 bg-ink px-4 py-3 text-paper">
-        <p className="mx-auto max-w-2xl text-h3 font-semibold tracking-tight">{siteConfig.name}</p>
+        <p className="mx-auto flex max-w-2xl items-center gap-2 text-h3 font-semibold tracking-tight">
+          <BrandLogo className="h-7 w-7" />
+          {siteConfig.name}
+        </p>
       </header>
 
       <div className="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-6">

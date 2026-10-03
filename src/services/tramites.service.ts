@@ -3,8 +3,9 @@
  *
  * Regla de negocio clave (docs/REQUIREMENTS.md 4.5): "días sin revisión" NO
  * se almacena — se calcula en la vista `vw_tramites_sin_revision` para que la
- * alerta nunca quede desactualizada. `listAlertas` filtra esa vista por un
- * umbral de días configurable.
+ * alerta nunca quede desactualizada. Cuenta desde lo más reciente entre envío,
+ * última revisión y último cambio de estado (0007_...). `listAlertas` filtra
+ * esa vista por el umbral; el valor por defecto vive en `alertas_config`.
  *
  * Autorización: RLS (0004_...). Escritura solo admin/oficina.
  */
@@ -14,8 +15,6 @@ import { emptyToUndefined } from "@/lib/form";
 import type { Database } from "@/types/database";
 
 export type TramiteEstado = Database["public"]["Enums"]["tramite_estado"];
-
-export const UMBRAL_ALERTA_DIAS_DEFAULT = 30;
 
 export type Tramite = {
   id: string;
@@ -93,9 +92,7 @@ export async function listTramites(proyectoId?: string): Promise<Tramite[]> {
 }
 
 /** Trámites abiertos que superan `umbralDias` sin revisión, del más viejo al más nuevo. */
-export async function listAlertas(
-  umbralDias: number = UMBRAL_ALERTA_DIAS_DEFAULT
-): Promise<TramiteAlerta[]> {
+export async function listAlertas(umbralDias: number): Promise<TramiteAlerta[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("vw_tramites_sin_revision")
