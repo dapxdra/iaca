@@ -33,3 +33,44 @@ export function transicionesValidas(desde: ProyectoEstado): ProyectoEstado[] {
   opciones.push("cancelado");
   return opciones;
 }
+
+export type TramiteEstado = Database["public"]["Enums"]["tramite_estado"];
+
+/** Estados no finales. Debe coincidir con los triggers de 0008_... */
+export const TRAMITE_ESTADOS_EN_CURSO: TramiteEstado[] = [
+  "pendiente",
+  "enviado",
+  "en_revision",
+  "observado",
+];
+
+/** Un subproyecto cancelado no bloquea: ya no tiene trabajo pendiente. */
+export const SUBPROYECTO_ESTADOS_TERMINADOS: ProyectoEstado[] = ["cerrado", "cancelado"];
+
+/**
+ * Por qué no se puede cerrar un proyecto o subproyecto, o `null` si se puede.
+ * Lo usa la UI para deshabilitar la opción y el servicio para rechazarla.
+ * Para un subproyecto, `subproyectosAbiertos` siempre es 0.
+ */
+export function motivoBloqueoCierre({
+  tramitesEnCurso,
+  subproyectosAbiertos = 0,
+}: {
+  tramitesEnCurso: number;
+  subproyectosAbiertos?: number;
+}): string | null {
+  const motivos: string[] = [];
+  if (tramitesEnCurso > 0) {
+    motivos.push(
+      tramitesEnCurso === 1 ? "1 trámite en curso" : `${tramitesEnCurso} trámites en curso`
+    );
+  }
+  if (subproyectosAbiertos > 0) {
+    motivos.push(
+      subproyectosAbiertos === 1
+        ? "1 subproyecto sin cerrar"
+        : `${subproyectosAbiertos} subproyectos sin cerrar`
+    );
+  }
+  return motivos.length > 0 ? `No se puede cerrar: hay ${motivos.join(" y ")}.` : null;
+}

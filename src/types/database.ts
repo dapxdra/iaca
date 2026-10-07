@@ -758,6 +758,7 @@ export type Database = {
           numero_expediente: string | null
           proyecto_id: string
           responsable_id: string | null
+          subproyecto_id: string | null
           tipo_tramite: string
           updated_at: string
         }
@@ -773,6 +774,7 @@ export type Database = {
           numero_expediente?: string | null
           proyecto_id: string
           responsable_id?: string | null
+          subproyecto_id?: string | null
           tipo_tramite: string
           updated_at?: string
         }
@@ -788,6 +790,7 @@ export type Database = {
           numero_expediente?: string | null
           proyecto_id?: string
           responsable_id?: string | null
+          subproyecto_id?: string | null
           tipo_tramite?: string
           updated_at?: string
         }
@@ -819,6 +822,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tramites_gubernamentales_subproyecto_fkey"
+            columns: ["subproyecto_id", "proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "subproyectos"
+            referencedColumns: ["id", "proyecto_id"]
           },
         ]
       }
@@ -1901,6 +1911,7 @@ export type Database = {
         Returns: unknown
       }
       unlockrows: { Args: { "": string }; Returns: number }
+      user_id_by_email: { Args: { p_email: string }; Returns: string }
       updategeometrysrid: {
         Args: {
           catalogn_name: string

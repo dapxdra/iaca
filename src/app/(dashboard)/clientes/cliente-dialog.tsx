@@ -6,12 +6,15 @@ import { ActionForm } from "@/components/ui/action-form";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { createClienteAction, updateClienteAction } from "./actions";
 import type { Cliente } from "@/services/clientes.service";
+import type { AccesoPortal } from "@/services/portal-clientes.service";
 
 /**
  * Diálogo de alta/edición de cliente. Un solo componente para ambos modos:
  * si recibe `cliente`, es edición (y agrega el `id` oculto); si no, es alta.
+ * `acceso` es el estado del cliente en el portal: define si se ofrece dar,
+ * reenviar o quitar el acceso.
  */
-export function ClienteDialog({ cliente }: { cliente?: Cliente }) {
+export function ClienteDialog({ cliente, acceso }: { cliente?: Cliente; acceso?: AccesoPortal }) {
   const isEdit = Boolean(cliente);
 
   return (
@@ -90,10 +93,53 @@ export function ClienteDialog({ cliente }: { cliente?: Cliente }) {
               <Field label="Notas" htmlFor="notas" error={errors.notas}>
                 <Textarea id="notas" name="notas" defaultValue={cliente?.notas ?? ""} />
               </Field>
+
+              <PortalField acceso={acceso} />
             </>
           )}
         </ActionForm>
       )}
     </FormDialog>
+  );
+}
+
+const PORTAL_ESTADO: Record<AccesoPortal, string> = {
+  invitado: "Invitado: todavía no entró al portal.",
+  activo: "Tiene acceso al portal.",
+};
+
+function PortalField({ acceso }: { acceso?: AccesoPortal }) {
+  if (!acceso) {
+    return (
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-md border border-border bg-surface-sunken px-3 py-2.5 text-small text-foreground">
+        <input
+          type="checkbox"
+          name="portal"
+          value="invitar"
+          data-cy="cliente-portal-invitar"
+          className="mt-0.5 h-4 w-4 cursor-pointer accent-[var(--primary)]"
+        />
+        <span>
+          <span className="font-medium">Dar acceso al portal</span>
+          <span className="block text-muted-foreground">
+            Le llega un correo para definir su contraseña y ver sus proyectos. Requiere correo.
+          </span>
+        </span>
+      </label>
+    );
+  }
+
+  return (
+    <Field
+      label="Acceso al portal"
+      htmlFor="portal"
+      hint={PORTAL_ESTADO[acceso]}
+    >
+      <Select id="portal" name="portal" defaultValue="" data-cy="cliente-portal">
+        <option value="">Sin cambios</option>
+        <option value="invitar">Reenviar invitación</option>
+        <option value="quitar">Quitar acceso</option>
+      </Select>
+    </Field>
   );
 }

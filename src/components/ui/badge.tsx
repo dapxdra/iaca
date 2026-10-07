@@ -68,4 +68,16 @@ export function EstadoTramiteBadge({ estado }: { estado: TramiteEstado }) {
   return <Badge label={TRAMITE_LABEL[estado]} tone={TRAMITE_TONE[estado]} />;
 }
 
+const PORTAL_LABEL = { invitado: "Invitado", activo: "Activo" } as const;
+
+const PORTAL_TONE: Record<keyof typeof PORTAL_LABEL, Tone> = {
+  invitado: T("bg-amber-500", "border-amber-500/30 bg-amber-500/10"),
+  activo: T("bg-green-600", "border-green-600/30 bg-green-600/10"),
+};
+
+/** Acceso de un cliente al portal (ver portal-clientes.service.ts). */
+export function AccesoPortalBadge({ acceso }: { acceso: keyof typeof PORTAL_LABEL }) {
+  return <Badge label={PORTAL_LABEL[acceso]} tone={PORTAL_TONE[acceso]} />;
+}
+
 export { PROYECTO_LABEL, TRAMITE_LABEL };

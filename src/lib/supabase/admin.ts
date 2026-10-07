@@ -16,6 +16,11 @@ import type { Database } from "@/types/database";
  * de entrada es la Server Action que valida, aplica el honeypot y limita por
  * IP. Si `anon` pudiera insertar, un bot llamaría la API REST directamente y
  * se saltaría las tres cosas.
+ *  - Dar o quitar acceso al portal a un cliente
+ *    (src/services/portal-clientes.service.ts): crear usuarios de Auth y
+ *    escribir `profiles` (RLS solo deja a admin) no se puede con la sesión de
+ *    oficina. Solo se llama desde acciones con guard "staff" y nunca toca
+ *    perfiles que no sean `cliente`.
  *
  * `import "server-only"` es lo que hace cumplir la regla de CLAUDE.md sobre la
  * service role key: si algún día alguien importa este módulo desde un

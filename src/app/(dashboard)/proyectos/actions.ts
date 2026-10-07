@@ -5,11 +5,13 @@ import { makeFormAction, idOnlySchema } from "@/lib/action";
 import {
   proyectoSchema,
   cambiarEstadoSchema,
+  cambiarEstadoSubproyectoSchema,
   subproyectoSchema,
   createProyecto,
   updateProyecto,
   deleteProyecto,
   cambiarEstado,
+  cambiarEstadoSubproyecto,
   createSubproyecto,
   deleteSubproyecto,
 } from "@/services/proyectos.service";
@@ -54,4 +56,11 @@ export const deleteSubproyectoAction = makeFormAction({
   handler: ({ id }) => deleteSubproyecto(id),
   revalidate: "/proyectos",
   successMessage: "Subproyecto eliminado.",
+});
+
+export const cambiarEstadoSubproyectoAction = makeFormAction({
+  schema: cambiarEstadoSubproyectoSchema,
+  handler: (data) => cambiarEstadoSubproyecto(data),
+  revalidate: "/proyectos",
+  successMessage: "Estado del subproyecto actualizado.",
 });

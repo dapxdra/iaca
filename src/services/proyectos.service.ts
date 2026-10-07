@@ -9,13 +9,23 @@
  *    cualquier estado). `cambiarEstado` valida la transición.
  *  - Al pasar a "entrega" sin fecha de entrega real, se deja como está (la
  *    fecha real se registra aparte); al "cerrar" se exige fecha de entrega real.
+ *  - No se cierra un proyecto con trámites en curso ni con subproyectos sin
+ *    cerrar, ni un subproyecto con trámites en curso propios. Los triggers de
+ *    0008_... lo garantizan en la base; acá se valida antes para dar un mensaje claro.
  *
  * Autorización: RLS (0004_...). Escritura solo admin/oficina.
  */
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { emptyToUndefined } from "@/lib/form";
-import { ESTADO_FLOW, transicionesValidas, type ProyectoEstado } from "@/lib/proyecto-flujo";
+import {
+  ESTADO_FLOW,
+  SUBPROYECTO_ESTADOS_TERMINADOS,
+  TRAMITE_ESTADOS_EN_CURSO,
+  motivoBloqueoCierre,
+  transicionesValidas,
+  type ProyectoEstado,
+} from "@/lib/proyecto-flujo";
 import type { Database } from "@/types/database";
 
 export { ESTADO_FLOW, transicionesValidas };
@@ -199,10 +209,44 @@ export async function cambiarEstado(
     const fecha = fecha_entrega_real ?? actual.fecha_entrega_real;
     if (!fecha) throw new Error("Para cerrar el proyecto registrá la fecha de entrega real.");
     patch.fecha_entrega_real = fecha;
+
+    const motivo = motivoBloqueoCierre(await getPendientesCierre(supabase, { proyectoId: id }));
+    if (motivo) throw new Error(motivo);
   }
 
   const { error } = await supabase.from("proyectos").update(patch).eq("id", id);
   if (error) throw new Error("No se pudo cambiar el estado del proyecto.");
+}
+
+/**
+ * Trámites en curso (y, para un proyecto, subproyectos sin terminar) que
+ * impiden el cierre. Para un subproyecto solo cuentan sus propios trámites.
+ */
+async function getPendientesCierre(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  target: { proyectoId: string } | { subproyectoId: string }
+): Promise<{ tramitesEnCurso: number; subproyectosAbiertos: number }> {
+  let tramites = supabase
+    .from("tramites_gubernamentales")
+    .select("id", { count: "exact", head: true })
+    .in("estado", TRAMITE_ESTADOS_EN_CURSO);
+  tramites =
+    "proyectoId" in target
+      ? tramites.eq("proyecto_id", target.proyectoId)
+      : tramites.eq("subproyecto_id", target.subproyectoId);
+
+  const subproyectos =
+    "proyectoId" in target
+      ? supabase
+          .from("subproyectos")
+          .select("id", { count: "exact", head: true })
+          .eq("proyecto_id", target.proyectoId)
+          .not("estado", "in", `(${SUBPROYECTO_ESTADOS_TERMINADOS.join(",")})`)
+      : null;
+
+  const [t, s] = await Promise.all([tramites, subproyectos]);
+  if (t.error || s?.error) throw new Error("No se pudo verificar si se puede cerrar.");
+  return { tramitesEnCurso: t.count ?? 0, subproyectosAbiertos: s?.count ?? 0 };
 }
 
 export async function deleteProyecto(id: string): Promise<void> {
@@ -265,6 +309,51 @@ export async function createSubproyecto(
   const supabase = await createClient();
   const { error } = await supabase.from("subproyectos").insert(data);
   if (error) throw new Error("No se pudo crear el subproyecto.");
+}
+
+/** Opciones para el select de subproyecto del formulario de trámites. */
+export async function listSubproyectoOptions(): Promise<
+  { id: string; proyecto_id: string; nombre: string }[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("subproyectos")
+    .select("id, proyecto_id, nombre")
+    .order("orden")
+    .order("nombre");
+  if (error) throw new Error("No se pudo cargar la lista de subproyectos.");
+  return data ?? [];
+}
+
+export const cambiarEstadoSubproyectoSchema = z.object({
+  id: z.string().uuid(),
+  estado: cambiarEstadoSchema.shape.estado,
+});
+
+export async function cambiarEstadoSubproyecto(
+  input: z.infer<typeof cambiarEstadoSubproyectoSchema>
+): Promise<void> {
+  const { id, estado } = cambiarEstadoSubproyectoSchema.parse(input);
+  const supabase = await createClient();
+
+  const { data: actual, error: readErr } = await supabase
+    .from("subproyectos")
+    .select("estado")
+    .eq("id", id)
+    .single();
+  if (readErr || !actual) throw new Error("No se pudo leer el estado actual del subproyecto.");
+
+  if (!transicionesValidas(actual.estado).includes(estado)) {
+    throw new Error(`Transición no permitida: ${actual.estado} → ${estado}.`);
+  }
+
+  if (estado === "cerrado") {
+    const motivo = motivoBloqueoCierre(await getPendientesCierre(supabase, { subproyectoId: id }));
+    if (motivo) throw new Error(motivo);
+  }
+
+  const { error } = await supabase.from("subproyectos").update({ estado }).eq("id", id);
+  if (error) throw new Error("No se pudo cambiar el estado del subproyecto.");
 }
 
 export async function deleteSubproyecto(id: string): Promise<void> {

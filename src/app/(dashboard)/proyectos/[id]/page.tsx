@@ -13,6 +13,11 @@ import { listClienteOptions } from "@/services/clientes.service";
 import { listProfileOptions } from "@/services/profiles.service";
 import { listBitacora } from "@/services/bitacora.service";
 import { listTramites } from "@/services/tramites.service";
+import {
+  SUBPROYECTO_ESTADOS_TERMINADOS,
+  TRAMITE_ESTADOS_EN_CURSO,
+  motivoBloqueoCierre,
+} from "@/lib/proyecto-flujo";
 import { getCobroProyecto } from "@/services/cobros.service";
 import { listArchivosProyecto } from "@/services/archivos.service";
 import { Section, DataItem } from "@/components/ui/section";
@@ -22,7 +27,11 @@ import { DeleteForm } from "@/components/ui/delete-form";
 import { ProyectoDialog } from "../proyecto-dialog";
 import { EstadoControl } from "./estado-control";
 import { SubproyectoDialog } from "./subproyecto-dialog";
-import { deleteSubproyectoAction } from "../actions";
+import {
+  cambiarEstadoAction,
+  cambiarEstadoSubproyectoAction,
+  deleteSubproyectoAction,
+} from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +60,18 @@ export default async function ProyectoDetallePage({
   const estadoIdx = ESTADO_FLOW.indexOf(proyecto.estado);
   const cancelado = proyecto.estado === "cancelado";
   const cerrado = proyecto.estado === "cerrado";
+
+  const tramitesEnCurso = tramites.filter((t) => TRAMITE_ESTADOS_EN_CURSO.includes(t.estado));
+  const bloqueoCierreProyecto = motivoBloqueoCierre({
+    tramitesEnCurso: tramitesEnCurso.length,
+    subproyectosAbiertos: subproyectos.filter(
+      (s) => !SUBPROYECTO_ESTADOS_TERMINADOS.includes(s.estado)
+    ).length,
+  });
+  const bloqueoCierreSub = (subproyectoId: string) =>
+    motivoBloqueoCierre({
+      tramitesEnCurso: tramitesEnCurso.filter((t) => t.subproyecto_id === subproyectoId).length,
+    });
 
   return (
     <div data-cy="page-proyecto-detalle" className="flex animate-fade-in flex-col gap-6">
@@ -128,9 +149,11 @@ export default async function ProyectoDetallePage({
         {canWrite && (
           <div className="mt-4 border-t border-border pt-4">
             <EstadoControl
-              proyectoId={proyecto.id}
+              action={cambiarEstadoAction}
+              id={proyecto.id}
               estadoActual={proyecto.estado}
-              tieneEntregaReal={Boolean(proyecto.fecha_entrega_real)}
+              pideFechaEntrega={!proyecto.fecha_entrega_real}
+              bloqueoCierre={bloqueoCierreProyecto}
             />
           </div>
         )}
@@ -188,7 +211,8 @@ export default async function ProyectoDetallePage({
             {subproyectos.map((s) => (
               <li
                 key={s.id}
-                className="group flex items-center justify-between gap-3 py-2.5"
+                data-cy={`subproyecto-row-${s.id}`}
+                className="group flex flex-wrap items-center justify-between gap-3 py-2.5"
               >
                 <div className="min-w-0">
                   <span className="text-body text-foreground">{s.nombre}</span>
@@ -198,6 +222,16 @@ export default async function ProyectoDetallePage({
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <EstadoProyectoBadge estado={s.estado} />
+                  {canWrite && (
+                    <EstadoControl
+                      action={cambiarEstadoSubproyectoAction}
+                      id={s.id}
+                      estadoActual={s.estado}
+                      bloqueoCierre={bloqueoCierreSub(s.id)}
+                      compact
+                      dataCy={`subproyecto-estado-${s.id}`}
+                    />
+                  )}
                   {canWrite && (
                     <span className="opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
                       <DeleteForm
@@ -236,6 +270,7 @@ export default async function ProyectoDetallePage({
               <tr>
                 <Th>Entidad</Th>
                 <Th>Tipo</Th>
+                {subproyectos.length > 0 && <Th>Subproyecto</Th>}
                 <Th>Expediente</Th>
                 <Th>Envío</Th>
                 <Th>Estado</Th>
@@ -246,6 +281,9 @@ export default async function ProyectoDetallePage({
                 <tr key={t.id}>
                   <Td className="text-foreground">{t.entidad}</Td>
                   <Td className="text-muted-foreground">{t.tipo_tramite}</Td>
+                  {subproyectos.length > 0 && (
+                    <Td className="text-muted-foreground">{t.subproyecto?.nombre ?? "—"}</Td>
+                  )}
                   <Td className="tabular-nums">{t.numero_expediente ?? "—"}</Td>
                   <Td className="whitespace-nowrap text-muted-foreground">
                     {formatDate(t.fecha_envio)}

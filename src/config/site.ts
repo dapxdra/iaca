@@ -793,3 +793,29 @@ export const alertasContent = {
   vacioNoLeidas: "Estás al día: nada pendiente de revisar.",
   vacioTodas: "Cuando un proyecto o trámite se quede sin movimiento, el aviso aparece acá.",
 } as const;
+
+/**
+ * Acceso de clientes al portal: invitación por correo (la arma
+ * src/services/portal-clientes.service.ts) y la pantalla donde el cliente
+ * define su contraseña (`/definir-contrasena`).
+ */
+export const portalClienteContent = {
+  emailAsunto: `Tu acceso al portal de ${siteConfig.name}`,
+  emailSaludo: (nombre: string) => `Hola ${nombre},`,
+  emailIntro: `Te damos acceso al portal de ${siteConfig.name}, donde podés consultar el avance de tus proyectos. Para entrar, definí tu contraseña con el siguiente botón.`,
+  emailBotonLabel: "Definir mi contraseña",
+  emailPie:
+    // El vencimiento lo fija Supabase Auth (Email OTP Expiration), por eso no se da un número.
+    "El enlace sirve una sola vez y vence al poco tiempo. Si venció, pedile a la oficina que te reenvíe la invitación. Si no esperabas este correo, podés ignorarlo.",
+  definirTitulo: "Definí tu contraseña",
+  definirDescripcion: "Con esta contraseña y tu correo vas a entrar al portal de ahora en adelante.",
+  passwordLabel: "Nueva contraseña",
+  confirmarLabel: "Repetí la contraseña",
+  passwordHint: "Mínimo 8 caracteres.",
+  noCoinciden: "Las contraseñas no coinciden.",
+  guardarLabel: "Guardar y entrar",
+  guardarPendingLabel: "Guardando…",
+  errorGuardar: "No se pudo guardar la contraseña. Intentá de nuevo.",
+  enlaceInvalido:
+    "El enlace no es válido o ya venció. Pedile a la oficina que te reenvíe la invitación.",
+} as const;

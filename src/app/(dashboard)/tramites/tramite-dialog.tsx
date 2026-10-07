@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Pencil, Plus } from "lucide-react";
 import { FormDialog } from "@/components/ui/dialog";
 import { ActionForm } from "@/components/ui/action-form";
@@ -18,12 +19,16 @@ const ESTADOS: { value: string; label: string }[] = [
 
 export function TramiteDialog({
   proyectos,
+  subproyectos,
   tramite,
 }: {
   proyectos: { id: string; codigo: string; nombre: string }[];
+  subproyectos: { id: string; proyecto_id: string; nombre: string }[];
   tramite?: Tramite;
 }) {
   const isEdit = Boolean(tramite);
+  const [proyectoId, setProyectoId] = useState(tramite?.proyecto_id ?? "");
+  const opcionesSub = subproyectos.filter((s) => s.proyecto_id === proyectoId);
 
   return (
     <FormDialog
@@ -61,7 +66,9 @@ export function TramiteDialog({
                   id="t-proyecto"
                   name="proyecto_id"
                   required
-                  defaultValue={tramite?.proyecto_id ?? ""}
+                  value={proyectoId}
+                  onChange={(e) => setProyectoId(e.target.value)}
+                  data-cy="tramite-proyecto"
                 >
                   <option value="" disabled>
                     Seleccioná un proyecto…
@@ -73,6 +80,33 @@ export function TramiteDialog({
                   ))}
                 </Select>
               </Field>
+
+              {opcionesSub.length > 0 && (
+                <Field
+                  label="Subproyecto"
+                  htmlFor="t-subproyecto"
+                  error={errors.subproyecto_id}
+                >
+                  {/* `key`: al cambiar de proyecto el select se reinicia, así no
+                      queda elegido un subproyecto de otro proyecto. */}
+                  <Select
+                    key={proyectoId}
+                    id="t-subproyecto"
+                    name="subproyecto_id"
+                    defaultValue={
+                      tramite?.proyecto_id === proyectoId ? (tramite?.subproyecto_id ?? "") : ""
+                    }
+                    data-cy="tramite-subproyecto"
+                  >
+                    <option value="">Todo el proyecto</option>
+                    {opcionesSub.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nombre}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Entidad" htmlFor="t-entidad" required error={errors.entidad}>

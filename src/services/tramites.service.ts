@@ -19,6 +19,7 @@ export type TramiteEstado = Database["public"]["Enums"]["tramite_estado"];
 export type Tramite = {
   id: string;
   proyecto_id: string;
+  subproyecto_id: string | null;
   entidad: string;
   tipo_tramite: string;
   numero_expediente: string | null;
@@ -27,6 +28,7 @@ export type Tramite = {
   fecha_ultima_revision: string | null;
   notas: string | null;
   proyecto: { id: string; codigo: string; nombre: string } | null;
+  subproyecto: { id: string; nombre: string } | null;
 };
 
 export type TramiteAlerta = {
@@ -42,9 +44,10 @@ export type TramiteAlerta = {
 };
 
 const SELECT =
-  "id, proyecto_id, entidad, tipo_tramite, numero_expediente, estado, fecha_envio, " +
-  "fecha_ultima_revision, notas, " +
-  "proyecto:proyectos!tramites_gubernamentales_proyecto_id_fkey(id, codigo, nombre)";
+  "id, proyecto_id, subproyecto_id, entidad, tipo_tramite, numero_expediente, estado, " +
+  "fecha_envio, fecha_ultima_revision, notas, " +
+  "proyecto:proyectos!tramites_gubernamentales_proyecto_id_fkey(id, codigo, nombre), " +
+  "subproyecto:subproyectos!tramites_gubernamentales_subproyecto_fkey(id, nombre)";
 
 const optionalText = z.preprocess(emptyToUndefined, z.string().trim().max(200).optional());
 const optionalDate = z.preprocess(
@@ -55,6 +58,12 @@ const optionalDate = z.preprocess(
 export const tramiteSchema = z
   .object({
     proyecto_id: z.string().uuid("Seleccioná un proyecto"),
+    // null (no undefined) para que al editar se pueda desasociar. La base
+    // valida que el subproyecto sea del mismo proyecto (FK compuesta, 0008_...).
+    subproyecto_id: z.preprocess(
+      (v) => emptyToUndefined(v) ?? null,
+      z.string().uuid("Subproyecto inválido").nullable()
+    ),
     entidad: z.string().trim().min(2, "Requerido").max(200),
     tipo_tramite: z.string().trim().min(2, "Requerido").max(200),
     numero_expediente: optionalText,

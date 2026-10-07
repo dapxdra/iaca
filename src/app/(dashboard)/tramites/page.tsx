@@ -5,7 +5,7 @@ import { requireRole, isStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { listTramites, listAlertas } from "@/services/tramites.service";
 import { getAlertasConfig } from "@/services/notificaciones.service";
-import { listProyectoOptions } from "@/services/proyectos.service";
+import { listProyectoOptions, listSubproyectoOptions } from "@/services/proyectos.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { TableWrap, Th, Td } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -34,10 +34,11 @@ export default async function TramitesPage({
   const UMBRALES = [...new Set([...UMBRALES_FIJOS, tramite_dias])].sort((a, b) => a - b);
   const umbralDias = UMBRALES.includes(Number(umbral)) ? Number(umbral) : tramite_dias;
 
-  const [alertas, tramites, proyectos] = await Promise.all([
+  const [alertas, tramites, proyectos, subproyectos] = await Promise.all([
     listAlertas(umbralDias),
     listTramites(),
     canWrite ? listProyectoOptions() : Promise.resolve([]),
+    canWrite ? listSubproyectoOptions() : Promise.resolve([]),
   ]);
 
   return (
@@ -45,7 +46,9 @@ export default async function TramitesPage({
       <DashboardPageHeader
         content={dashboardPages.tramites}
         action={
-          canWrite && proyectos.length > 0 ? <TramiteDialog proyectos={proyectos} /> : null
+          canWrite && proyectos.length > 0 ? (
+            <TramiteDialog proyectos={proyectos} subproyectos={subproyectos} />
+          ) : null
         }
       />
 
@@ -134,7 +137,11 @@ export default async function TramitesPage({
             icon={FileStack}
             title="Todavía no hay trámites"
             description="Registrá el primer envío a una entidad para darle seguimiento."
-            action={canWrite && proyectos.length > 0 ? <TramiteDialog proyectos={proyectos} /> : null}
+            action={
+              canWrite && proyectos.length > 0 ? (
+                <TramiteDialog proyectos={proyectos} subproyectos={subproyectos} />
+              ) : null
+            }
           />
         </div>
       ) : (
@@ -165,6 +172,11 @@ export default async function TramitesPage({
                   ) : (
                     "—"
                   )}
+                  {t.subproyecto && (
+                    <span className="block text-small text-muted-foreground">
+                      {t.subproyecto.nombre}
+                    </span>
+                  )}
                 </Td>
                 <Td className="text-foreground">{t.entidad}</Td>
                 <Td className="text-muted-foreground">{t.tipo_tramite}</Td>
@@ -181,7 +193,7 @@ export default async function TramitesPage({
                 {canWrite && (
                   <Td className="text-right">
                     <div className="flex justify-end gap-2 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                      <TramiteDialog proyectos={proyectos} tramite={t} />
+                      <TramiteDialog proyectos={proyectos} subproyectos={subproyectos} tramite={t} />
                       <DeleteForm
                         action={deleteTramiteAction}
                         id={t.id}

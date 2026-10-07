@@ -3,10 +3,12 @@ import { dashboardPages } from "@/config/site";
 import { requireRole, isStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { listClientes } from "@/services/clientes.service";
+import { getAccesosPortal } from "@/services/portal-clientes.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { SearchField } from "../_components/search-field";
 import { TableWrap, Th, Td } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { AccesoPortalBadge } from "@/components/ui/badge";
 import { DeleteForm } from "@/components/ui/delete-form";
 import { ClienteDialog } from "./cliente-dialog";
 import { deleteClienteAction } from "./actions";
@@ -25,7 +27,7 @@ export default async function ClientesPage({
 }) {
   const [{ q }, profile] = await Promise.all([searchParams, requireRole(["admin", "oficina"])]);
   const canWrite = isStaff(profile.role);
-  const clientes = await listClientes(q);
+  const [clientes, accesos] = await Promise.all([listClientes(q), getAccesosPortal()]);
 
   return (
     <div data-cy="page-clientes" className="flex animate-fade-in flex-col gap-6">
@@ -58,6 +60,7 @@ export default async function ClientesPage({
               <Th>Tipo</Th>
               <Th>Identificación</Th>
               <Th>Contacto</Th>
+              <Th>Portal</Th>
               <Th>Alta</Th>
               {canWrite && <Th className="w-0 text-right">Acciones</Th>}
             </tr>
@@ -76,13 +79,20 @@ export default async function ClientesPage({
                     )}
                   </div>
                 </Td>
+                <Td>
+                  {accesos[c.id] ? (
+                    <AccesoPortalBadge acceso={accesos[c.id]} />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </Td>
                 <Td className="whitespace-nowrap text-muted-foreground">
                   {formatDate(c.created_at)}
                 </Td>
                 {canWrite && (
                   <Td className="text-right">
                     <div className="flex justify-end gap-2 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                      <ClienteDialog cliente={c} />
+                      <ClienteDialog cliente={c} acceso={accesos[c.id]} />
                       <DeleteForm
                         action={deleteClienteAction}
                         id={c.id}

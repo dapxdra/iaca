@@ -177,8 +177,8 @@ Reglas:
 
 `src/components/contact-form.tsx` → `src/app/actions.ts` → `src/services/contacto.service.ts`.
 
-Es una de las **dos excepciones** (la otra: notificaciones, abajo) a la regla de usar siempre
-el cliente de sesión de Supabase: la escritura usa `createAdminClient()` (service role) porque `contacto_mensajes` no tiene
+Es una de las **tres excepciones** (las otras: notificaciones y acceso de clientes al portal,
+abajo) a la regla de usar siempre el cliente de sesión de Supabase: la escritura usa `createAdminClient()` (service role) porque `contacto_mensajes` no tiene
 política de insert en RLS **para nadie**. Eso es deliberado — si `anon` pudiera insertar, un
 bot llamaría la API REST de Supabase directamente y se saltaría la validación, el honeypot y
 el límite por IP. Sin política, la única puerta es la Server Action, que sí valida.
@@ -215,6 +215,21 @@ Vercel Cron ([vercel.json](./vercel.json), 13:00 UTC = 7:00 en Costa Rica) →
 - **Correo**: un resumen por persona vía Resend ([src/lib/email.ts](./src/lib/email.ts)).
   Sin `RESEND_API_KEY` la bandeja interna sigue funcionando. Todo texto del usuario va con
   `escapeHtml` en el HTML del correo.
+
+## Acceso de clientes al portal
+
+Casilla "Dar acceso al portal" en el diálogo de cliente →
+[clientes/actions.ts](./src/app/(dashboard)/clientes/actions.ts) →
+[portal-clientes.service.ts](./src/services/portal-clientes.service.ts) (service role).
+
+- Un cliente con acceso = perfil `role = cliente` con `cliente_id` = su ficha. Quitar el
+  acceso desactiva el perfil; no se borra el usuario.
+- El enlace del correo lleva a `/definir-contrasena`; el token se canjea al **enviar** el
+  formulario, no al abrir el link (los escáneres de correo lo consumirían).
+- `handle_new_user()` toma el rol de `raw_app_meta_data` (0009_...), nunca de
+  `raw_user_meta_data`, que lo escribe quien se registra. Sin rol ahí, el perfil nace inactivo.
+- Nunca cambiar el rol de un usuario interno desde este flujo: si el correo ya es de un
+  usuario no-cliente, se rechaza.
 
 ## Colores de estado: usar los tokens, no los de Tailwind
 

@@ -30,7 +30,8 @@ function passesGuard(guard: Guard, role: Parameters<typeof isStaff>[0]): boolean
 export function makeFormAction<S extends z.ZodType>(opts: {
   schema: S;
   guard?: Guard;
-  handler: (data: z.infer<S>, ctx: { userId: string }) => Promise<void>;
+  /** Si devuelve un texto, reemplaza a `successMessage` (ej. éxito parcial). */
+  handler: (data: z.infer<S>, ctx: { userId: string }) => Promise<void | string>;
   revalidate: string | string[];
   successMessage: string;
   permissionMessage?: string;
@@ -49,8 +50,9 @@ export function makeFormAction<S extends z.ZodType>(opts: {
     const parsed = parseForm(schema, formData);
     if (!parsed.ok) return parsed.state;
 
+    let message: string = successMessage;
     try {
-      await handler(parsed.data, { userId: profile.userId });
+      message = (await handler(parsed.data, { userId: profile.userId })) || successMessage;
     } catch (error) {
       return {
         status: "error",
@@ -61,7 +63,7 @@ export function makeFormAction<S extends z.ZodType>(opts: {
     for (const path of Array.isArray(revalidate) ? revalidate : [revalidate]) {
       revalidatePath(path);
     }
-    return { status: "success", message: successMessage };
+    return { status: "success", message };
   };
 }
 
