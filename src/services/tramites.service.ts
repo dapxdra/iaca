@@ -4,14 +4,15 @@
  * Regla de negocio clave (docs/REQUIREMENTS.md 4.5): "días sin revisión" NO
  * se almacena — se calcula en la vista `vw_tramites_sin_revision` para que la
  * alerta nunca quede desactualizada. Cuenta desde lo más reciente entre envío,
- * última revisión y último cambio de estado (0007_...). `listAlertas` filtra
- * esa vista por el umbral; el valor por defecto vive en `alertas_config`.
+ * última revisión y último cambio de estado (0007_...). Cada estado en curso
+ * tiene su propio umbral en `alertas_tramite_umbral` (0010_...).
  *
  * Autorización: RLS (0004_...). Escritura solo admin/oficina.
  */
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { emptyToUndefined } from "@/lib/form";
+import { TRAMITE_ESTADOS } from "@/lib/proyecto-flujo";
 import type { Database } from "@/types/database";
 
 export type TramiteEstado = Database["public"]["Enums"]["tramite_estado"];
@@ -39,6 +40,7 @@ export type TramiteAlerta = {
   fecha_envio: string | null;
   fecha_ultima_revision: string | null;
   dias_sin_revision: number | null;
+  umbral_dias: number | null;
   proyecto_codigo: string;
   proyecto_nombre: string;
 };
@@ -67,14 +69,7 @@ export const tramiteSchema = z
     entidad: z.string().trim().min(2, "Requerido").max(200),
     tipo_tramite: z.string().trim().min(2, "Requerido").max(200),
     numero_expediente: optionalText,
-    estado: z.enum([
-      "pendiente",
-      "enviado",
-      "en_revision",
-      "observado",
-      "aprobado",
-      "rechazado",
-    ]),
+    estado: z.enum(TRAMITE_ESTADOS),
     fecha_envio: optionalDate,
     fecha_ultima_revision: optionalDate,
     notas: z.preprocess(emptyToUndefined, z.string().trim().max(2000).optional()),
@@ -100,18 +95,56 @@ export async function listTramites(proyectoId?: string): Promise<Tramite[]> {
   return (data ?? []) as unknown as Tramite[];
 }
 
-/** Trámites abiertos que superan `umbralDias` sin revisión, del más viejo al más nuevo. */
-export async function listAlertas(umbralDias: number): Promise<TramiteAlerta[]> {
+/**
+ * Trámites abiertos sin revisión, del más viejo al más nuevo. Sin
+ * `umbralDias`, los que superan el umbral de su propio estado (lo mismo que
+ * avisan las notificaciones); con él, los que superan ese número fijo.
+ */
+export async function listAlertas(umbralDias?: number): Promise<TramiteAlerta[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("vw_tramites_sin_revision")
     .select(
-      "id, entidad, tipo_tramite, estado, fecha_envio, fecha_ultima_revision, dias_sin_revision, proyecto_codigo, proyecto_nombre"
+      "id, entidad, tipo_tramite, estado, fecha_envio, fecha_ultima_revision, dias_sin_revision, umbral_dias, proyecto_codigo, proyecto_nombre"
     )
-    .gte("dias_sin_revision", umbralDias)
     .order("dias_sin_revision", { ascending: false });
+  query =
+    umbralDias === undefined
+      ? query.eq("supera_umbral", true)
+      : query.gte("dias_sin_revision", umbralDias);
+  const { data, error } = await query;
   if (error) throw new Error("No se pudieron cargar las alertas de trámites.");
   return (data ?? []) as unknown as TramiteAlerta[];
+}
+
+/** Trámite tal como lo ve el cliente en su portal: sin notas ni responsable. */
+export type TramiteCliente = {
+  id: string;
+  subproyecto_nombre: string | null;
+  entidad: string;
+  tipo_tramite: string;
+  numero_expediente: string | null;
+  estado: TramiteEstado;
+  fecha_envio: string | null;
+  fecha_ultima_revision: string | null;
+};
+
+/**
+ * Trámites de un proyecto del cliente actual. La vista (0011_...) ya filtra
+ * por el cliente del usuario; para cualquier otro rol devuelve vacío.
+ */
+export async function listTramitesCliente(proyectoId: string): Promise<TramiteCliente[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vw_tramites_cliente")
+    .select(
+      "id, subproyecto_nombre, entidad, tipo_tramite, numero_expediente, estado, fecha_envio, fecha_ultima_revision"
+    )
+    .eq("proyecto_id", proyectoId)
+    .order("fecha_envio", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+  if (error) throw new Error("No se pudieron cargar los trámites.");
+  return (data ?? []) as unknown as TramiteCliente[];
 }
 
 export async function createTramite(input: TramiteInput): Promise<void> {

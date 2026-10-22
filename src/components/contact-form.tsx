@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Send, TriangleAlert } from "lucide-react";
 import { enviarMensajeContacto } from "@/app/actions";
@@ -8,6 +8,7 @@ import { contactFormContent, legalNav, servicioOptions } from "@/config/site";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { idleFormState } from "@/lib/form";
+import { CANTONES_POR_PROVINCIA, PROVINCIAS, type Provincia } from "@/lib/costa-rica";
 
 /**
  * Formulario público de solicitud de cotización.
@@ -28,6 +29,7 @@ export function ContactForm() {
   const [state, formAction, pending] = useActionState(enviarMensajeContacto, idleFormState);
   const errorRef = useRef<HTMLParagraphElement>(null);
   const renderizadoEnRef = useRef<HTMLInputElement>(null);
+  const [provincia, setProvincia] = useState<Provincia | "">("");
 
   /**
    * La marca de tiempo se escribe en el input al montar, no se renderiza.
@@ -148,11 +150,14 @@ export function ContactForm() {
           htmlFor="telefono"
           error={fieldErrors.telefono}
           hint={contactFormContent.telefonoHint}
+          required
         >
           <Input
             id="telefono"
             name="telefono"
             type="tel"
+            required
+            minLength={8}
             maxLength={40}
             autoComplete="tel"
             inputMode="tel"
@@ -185,6 +190,65 @@ export function ContactForm() {
         </Field>
       </div>
 
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field
+          label={contactFormContent.provinciaLabel}
+          htmlFor="provincia"
+          error={fieldErrors.provincia}
+          required
+        >
+          <Select
+            id="provincia"
+            name="provincia"
+            required
+            value={provincia}
+            onChange={(e) => setProvincia(e.target.value as Provincia | "")}
+            autoComplete="address-level1"
+            data-cy="contact-provincia"
+            aria-invalid={Boolean(fieldErrors.provincia)}
+            aria-describedby={fieldErrors.provincia ? "provincia-error" : undefined}
+          >
+            <option value="">{contactFormContent.provinciaPlaceholder}</option>
+            {PROVINCIAS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field
+          label={contactFormContent.cantonLabel}
+          htmlFor="canton"
+          error={fieldErrors.canton}
+          required
+        >
+          <Select
+            // Cambiar de provincia vuelve a montar el select para limpiar el cantón elegido.
+            key={provincia}
+            id="canton"
+            name="canton"
+            required
+            defaultValue=""
+            disabled={!provincia}
+            autoComplete="address-level2"
+            data-cy="contact-canton"
+            aria-invalid={Boolean(fieldErrors.canton)}
+            aria-describedby={fieldErrors.canton ? "canton-error" : undefined}
+          >
+            <option value="">
+              {provincia ? contactFormContent.cantonPlaceholder : contactFormContent.cantonSinProvincia}
+            </option>
+            {provincia &&
+              CANTONES_POR_PROVINCIA[provincia].map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+          </Select>
+        </Field>
+      </div>
+
       <Field
         label={contactFormContent.ubicacionLabel}
         htmlFor="ubicacion"
@@ -195,11 +259,11 @@ export function ContactForm() {
           id="ubicacion"
           name="ubicacion"
           type="text"
-          maxLength={200}
-          autoComplete="address-level1"
+          maxLength={150}
+          autoComplete="address-level3"
           data-cy="contact-ubicacion"
           aria-invalid={Boolean(fieldErrors.ubicacion)}
-          aria-describedby={fieldErrors.ubicacion ? "ubicacion-error" : undefined}
+          aria-describedby={fieldErrors.ubicacion ? "ubicacion-error" : "ubicacion-hint"}
         />
       </Field>
 

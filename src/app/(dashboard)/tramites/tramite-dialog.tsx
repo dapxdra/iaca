@@ -7,15 +7,8 @@ import { ActionForm } from "@/components/ui/action-form";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { createTramiteAction, updateTramiteAction } from "./actions";
 import type { Tramite } from "@/services/tramites.service";
-
-const ESTADOS: { value: string; label: string }[] = [
-  { value: "pendiente", label: "Pendiente" },
-  { value: "enviado", label: "Enviado" },
-  { value: "en_revision", label: "En revisión" },
-  { value: "observado", label: "Observado" },
-  { value: "aprobado", label: "Aprobado" },
-  { value: "rechazado", label: "Rechazado" },
-];
+import { TRAMITE_LABEL } from "@/components/ui/badge";
+import { TRAMITE_ESTADOS } from "@/lib/proyecto-flujo";
 
 export function TramiteDialog({
   proyectos,
@@ -147,9 +140,9 @@ export function TramiteDialog({
                     name="estado"
                     defaultValue={tramite?.estado ?? "pendiente"}
                   >
-                    {ESTADOS.map((e) => (
-                      <option key={e.value} value={e.value}>
-                        {e.label}
+                    {TRAMITE_ESTADOS.map((e) => (
+                      <option key={e} value={e}>
+                        {TRAMITE_LABEL[e]}
                       </option>
                     ))}
                   </Select>

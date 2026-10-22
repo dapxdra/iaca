@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import {
   getAlertasConfig,
+  getUmbralesTramite,
   listNotificaciones,
 } from "@/services/notificaciones.service";
 import { DashboardPageHeader } from "../_components/page-header";
@@ -36,9 +37,10 @@ export default async function NotificacionesPage({
   const soloNoLeidas = ver !== "todas";
   const esAdmin = profile.role === "admin";
 
-  const [notificaciones, config] = await Promise.all([
+  const [notificaciones, config, umbrales] = await Promise.all([
     listNotificaciones(soloNoLeidas),
     esAdmin ? getAlertasConfig() : Promise.resolve(null),
+    esAdmin ? getUmbralesTramite() : Promise.resolve(null),
   ]);
   const hayNoLeidas = notificaciones.some((n) => !n.leida_at);
 
@@ -181,7 +183,7 @@ export default async function NotificacionesPage({
           <p className="mb-4 text-small text-muted-foreground">
             {alertasContent.configDescripcion}
           </p>
-          <AlertasConfigForm config={config} />
+          {umbrales && <AlertasConfigForm config={config} umbrales={umbrales} />}
         </Section>
       )}
     </div>

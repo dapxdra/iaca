@@ -20,7 +20,6 @@ export type Database = {
           id: boolean
           proyecto_dias: number
           recordatorio_dias: number
-          tramite_dias: number
           updated_at: string
         }
         Insert: {
@@ -28,7 +27,6 @@ export type Database = {
           id?: boolean
           proyecto_dias?: number
           recordatorio_dias?: number
-          tramite_dias?: number
           updated_at?: string
         }
         Update: {
@@ -36,7 +34,24 @@ export type Database = {
           id?: boolean
           proyecto_dias?: number
           recordatorio_dias?: number
-          tramite_dias?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      alertas_tramite_umbral: {
+        Row: {
+          dias: number
+          estado: Database["public"]["Enums"]["tramite_estado"]
+          updated_at: string
+        }
+        Insert: {
+          dias: number
+          estado: Database["public"]["Enums"]["tramite_estado"]
+          updated_at?: string
+        }
+        Update: {
+          dias?: number
+          estado?: Database["public"]["Enums"]["tramite_estado"]
           updated_at?: string
         }
         Relationships: []
@@ -973,6 +988,22 @@ export type Database = {
           },
         ]
       }
+      vw_tramites_cliente: {
+        Row: {
+          created_at: string | null
+          entidad: string | null
+          estado: Database["public"]["Enums"]["tramite_estado"] | null
+          fecha_envio: string | null
+          fecha_ultima_revision: string | null
+          id: string | null
+          numero_expediente: string | null
+          proyecto_id: string | null
+          subproyecto_id: string | null
+          subproyecto_nombre: string | null
+          tipo_tramite: string | null
+        }
+        Relationships: []
+      }
       vw_tramites_sin_revision: {
         Row: {
           dias_sin_revision: number | null
@@ -987,7 +1018,9 @@ export type Database = {
           proyecto_nombre: string | null
           proyecto_responsable_id: string | null
           responsable_id: string | null
+          supera_umbral: boolean | null
           tipo_tramite: string | null
+          umbral_dias: number | null
         }
         Relationships: [
           {
@@ -1945,11 +1978,12 @@ export type Database = {
       punto_fuente: "mapit_csv" | "gps" | "manual" | "postgresql_import"
       tramite_estado:
         | "pendiente"
-        | "enviado"
-        | "en_revision"
-        | "observado"
-        | "aprobado"
-        | "rechazado"
+        | "sellado_cfia"
+        | "calificacion_rn"
+        | "publico_defectuoso"
+        | "publico_inscrito"
+        | "publico_aprobado"
+        | "publico_cancelado"
       user_role: "admin" | "oficina" | "campo" | "cliente"
     }
     CompositeTypes: {
@@ -2109,11 +2143,12 @@ export const Constants = {
       punto_fuente: ["mapit_csv", "gps", "manual", "postgresql_import"],
       tramite_estado: [
         "pendiente",
-        "enviado",
-        "en_revision",
-        "observado",
-        "aprobado",
-        "rechazado",
+        "sellado_cfia",
+        "calificacion_rn",
+        "publico_defectuoso",
+        "publico_inscrito",
+        "publico_aprobado",
+        "publico_cancelado",
       ],
       user_role: ["admin", "oficina", "campo", "cliente"],
     },

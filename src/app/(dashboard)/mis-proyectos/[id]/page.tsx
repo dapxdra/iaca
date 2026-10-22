@@ -4,17 +4,23 @@ import { ArrowLeft, Check } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { getProyecto } from "@/services/proyectos.service";
+import { listTramitesCliente } from "@/services/tramites.service";
 import { ESTADO_FLOW } from "@/lib/proyecto-flujo";
 import { Section, DataItem } from "@/components/ui/section";
-import { EstadoProyectoBadge, PROYECTO_LABEL } from "@/components/ui/badge";
+import {
+  EstadoProyectoBadge,
+  EstadoTramiteBadge,
+  PROYECTO_LABEL,
+} from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Ficha de proyecto para el rol `cliente` — puramente informativa: estado y
- * fechas, nada de cobros, bitácora ni trámites internos (eso es operativo,
- * no le corresponde al cliente verlo). RLS (0005_...) ya garantiza que
- * `getProyecto` solo devuelve la fila si es uno de sus proyectos.
+ * Ficha de proyecto para el rol `cliente` — puramente informativa: estado,
+ * fechas y el avance de sus trámites. Nada de cobros, bitácora ni notas
+ * internas de los trámites (eso es operativo). RLS (0005_...) ya garantiza
+ * que `getProyecto` solo devuelve la fila si es uno de sus proyectos, y
+ * `vw_tramites_cliente` (0011_...) solo expone sus trámites.
  */
 export default async function MiProyectoDetallePage({
   params,
@@ -22,7 +28,7 @@ export default async function MiProyectoDetallePage({
   params: Promise<{ id: string }>;
 }) {
   const [{ id }] = await Promise.all([params, requireRole(["cliente"])]);
-  const proyecto = await getProyecto(id);
+  const [proyecto, tramites] = await Promise.all([getProyecto(id), listTramitesCliente(id)]);
   if (!proyecto) notFound();
 
   const estadoIdx = ESTADO_FLOW.indexOf(proyecto.estado);
@@ -30,7 +36,10 @@ export default async function MiProyectoDetallePage({
   const cerrado = proyecto.estado === "cerrado";
 
   return (
-    <div data-cy="page-mi-proyecto-detalle" className="flex animate-fade-in flex-col gap-6">
+    <div
+      data-cy="page-mi-proyecto-detalle"
+      className="flex animate-fade-in flex-col gap-6"
+    >
       <div>
         <Link
           href="/mis-proyectos"
@@ -44,7 +53,9 @@ export default async function MiProyectoDetallePage({
           </h1>
           <EstadoProyectoBadge estado={proyecto.estado} />
         </div>
-        <p className="mt-1 text-body text-muted-foreground">{proyecto.nombre}</p>
+        <p className="mt-1 text-body text-muted-foreground">
+          {proyecto.nombre}
+        </p>
       </div>
 
       <Section title="Avance del proyecto" dataCy="mi-proyecto-flujo">
@@ -68,7 +79,9 @@ export default async function MiProyectoDetallePage({
                   </span>
                   <span
                     className={`text-small font-medium ${
-                      done || current ? "text-foreground" : "text-muted-foreground"
+                      done || current
+                        ? "text-foreground"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {PROYECTO_LABEL[e]}
@@ -93,7 +106,9 @@ export default async function MiProyectoDetallePage({
 
       <Section title="Información" dataCy="mi-proyecto-info">
         <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <DataItem label="Tipo de servicio">{proyecto.tipo_servicio ?? "—"}</DataItem>
+          <DataItem label="Tipo de servicio">
+            {proyecto.tipo_servicio ?? "—"}
+          </DataItem>
           <DataItem label="Responsable de IACA">
             {proyecto.responsable?.full_name ?? "Sin asignar"}
           </DataItem>
@@ -102,16 +117,56 @@ export default async function MiProyectoDetallePage({
               .filter(Boolean)
               .join(", ") || "—"}
           </DataItem>
-          <DataItem label="Inicio">{formatDate(proyecto.fecha_inicio)}</DataItem>
+          <DataItem label="Inicio">
+            {formatDate(proyecto.fecha_inicio)}
+          </DataItem>
           <DataItem label="Entrega estimada">
             {formatDate(proyecto.fecha_estimada_entrega)}
           </DataItem>
-          <DataItem label="Entrega real">{formatDate(proyecto.fecha_entrega_real)}</DataItem>
+          <DataItem label="Entrega real">
+            {formatDate(proyecto.fecha_entrega_real)}
+          </DataItem>
         </dl>
         {proyecto.descripcion && (
           <p className="mt-5 border-t border-border pt-4 text-body text-muted-foreground">
             {proyecto.descripcion}
           </p>
+        )}
+      </Section>
+
+      <Section title="Trámites" dataCy="mi-proyecto-tramites">
+        {tramites.length === 0 ? (
+          <p className="text-body text-muted-foreground">
+            Todavía no hay trámites registrados para este proyecto.
+          </p>
+        ) : (
+          <ul className="-my-4 divide-y divide-border">
+            {tramites.map((t) => (
+              <li
+                key={t.id}
+                data-cy={`mi-proyecto-tramite-${t.id}`}
+                className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-4"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground">{t.tipo_tramite}</p>
+                  <p className="text-small text-muted-foreground">
+                    {[
+                      t.entidad,
+                      t.subproyecto_nombre,
+                      t.numero_expediente && `Exp. ${t.numero_expediente}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                  <p className="mt-1 text-small tabular-nums text-muted-foreground">
+                    Enviado: {formatDate(t.fecha_envio)} · Última revisión:{" "}
+                    {formatDate(t.fecha_ultima_revision)}
+                  </p>
+                </div>
+                <EstadoTramiteBadge estado={t.estado} />
+              </li>
+            ))}
+          </ul>
         )}
       </Section>
     </div>

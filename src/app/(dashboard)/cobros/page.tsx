@@ -3,54 +3,88 @@ import { ChevronRight, CircleDollarSign, Receipt, Wallet } from "lucide-react";
 import { dashboardPages } from "@/config/site";
 import { requireRole } from "@/lib/auth";
 import { formatColones, formatDate } from "@/lib/format";
-import { listCobrosProyectos } from "@/services/cobros.service";
+import { listCobrosProyectos, parseEstadoCobro } from "@/services/cobros.service";
+import { listClienteOptions } from "@/services/clientes.service";
 import { DashboardPageHeader } from "../_components/page-header";
+import { SearchField } from "../_components/search-field";
 import { TableWrap, Th, Td } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatCard } from "@/components/ui/stat-card";
+import { CobroFilters } from "./cobro-filters";
+import { Cotizador } from "./cotizador";
 
 export const dynamic = "force-dynamic";
 
-export default async function CobrosPage() {
-  await requireRole(["admin", "oficina"]);
-  const cobros = await listCobrosProyectos();
+export default async function CobrosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; estado?: string; cliente?: string }>;
+}) {
+  const [params, profile] = await Promise.all([searchParams, requireRole(["admin", "oficina"])]);
+  // El total cobrado (ingresos del negocio) es solo para admin. Oficina sigue
+  // viendo lo pagado por proyecto porque es quien registra los pagos.
+  const verTotalCobrado = profile.role === "admin";
 
+  const [cobros, clientes] = await Promise.all([
+    listCobrosProyectos({
+      search: params.q,
+      estado: parseEstadoCobro(params.estado),
+      clienteId: params.cliente,
+    }),
+    listClienteOptions(),
+  ]);
+
+  const hasFilters = Boolean(params.q || params.estado || params.cliente);
+  const filtroHint = hasFilters ? "Según los filtros" : undefined;
   const totalPorCobrar = cobros.reduce((s, c) => s + (c.saldo_pendiente ?? 0), 0);
-  const totalPagado = cobros.reduce((s, c) => s + c.total_pagado, 0);
+  const totalPagado = verTotalCobrado ? cobros.reduce((s, c) => s + c.total_pagado, 0) : 0;
   const sinMonto = cobros.filter((c) => c.monto_cobrar === null).length;
 
   return (
     <div data-cy="page-cobros" className="flex animate-fade-in flex-col gap-6">
       <DashboardPageHeader content={dashboardPages.cobros} />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className={`grid gap-4 ${verTotalCobrado ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
         <StatCard
           label="Saldo pendiente total"
           value={formatColones(totalPorCobrar)}
           icon={Wallet}
           tone="warn"
+          hint={filtroHint}
         />
-        <StatCard
-          label="Total cobrado"
-          value={formatColones(totalPagado)}
-          icon={CircleDollarSign}
-          tone="positive"
-        />
+        {verTotalCobrado && (
+          <StatCard
+            label="Total cobrado"
+            value={formatColones(totalPagado)}
+            icon={CircleDollarSign}
+            tone="positive"
+            hint={filtroHint}
+          />
+        )}
         <StatCard
           label="Proyectos sin monto"
           value={sinMonto}
           icon={Receipt}
           tone="neutral"
-          hint="Sin cotización cargada"
+          hint={filtroHint ?? "Sin cotización cargada"}
         />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchField placeholder="Código o nombre" dataCy="cobros-search" />
+        <CobroFilters clientes={clientes} />
       </div>
 
       {cobros.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface-raised shadow-sm">
           <EmptyState
             icon={Receipt}
-            title="No hay proyectos"
-            description="Cuando existan proyectos aparecerá acá su estado de cobro."
+            title={hasFilters ? "Sin coincidencias" : "No hay proyectos"}
+            description={
+              hasFilters
+                ? "Ajustá la búsqueda o los filtros."
+                : "Cuando existan proyectos aparecerá acá su estado de cobro."
+            }
           />
         </div>
       ) : (
@@ -103,6 +137,8 @@ export default async function CobrosPage() {
           </tbody>
         </TableWrap>
       )}
+
+      <Cotizador />
     </div>
   );
 }

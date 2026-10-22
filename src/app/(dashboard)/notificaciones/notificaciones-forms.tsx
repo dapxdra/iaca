@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { idleFormState, type FormState } from "@/lib/form";
-import type { AlertasConfig } from "@/services/notificaciones.service";
+import { TRAMITE_LABEL } from "@/components/ui/badge";
+import { TRAMITE_ESTADOS_EN_CURSO } from "@/lib/proyecto-flujo";
+import {
+  umbralCampo,
+  type AlertasConfig,
+  type UmbralesTramite,
+} from "@/services/notificaciones.service";
 import { updateAlertasConfigAction } from "./actions";
 
 type Action = (prev: FormState, formData: FormData) => Promise<FormState>;
@@ -53,12 +59,18 @@ export function ActionButton({
   );
 }
 
-export function AlertasConfigForm({ config }: { config: AlertasConfig }) {
+export function AlertasConfigForm({
+  config,
+  umbrales,
+}: {
+  config: AlertasConfig;
+  umbrales: UmbralesTramite;
+}) {
   const [state, formAction, pending] = useActionState(updateAlertasConfigAction, idleFormState);
   useActionToast(state, "Configuración guardada");
   const errs = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
-  const diasInput = (name: keyof AlertasConfig, value: number, max: number) => (
+  const diasInput = (name: string, value: number, max: number) => (
     <Input
       id={name}
       name={name}
@@ -92,15 +104,6 @@ export function AlertasConfigForm({ config }: { config: AlertasConfig }) {
         {diasInput("proyecto_dias", config.proyecto_dias, 365)}
       </Field>
       <Field
-        label="Trámite sin movimiento"
-        htmlFor="tramite_dias"
-        hint="Días sin revisión ni cambio de estado"
-        error={errs.tramite_dias}
-        required
-      >
-        {diasInput("tramite_dias", config.tramite_dias, 365)}
-      </Field>
-      <Field
         label="Repetir aviso cada"
         htmlFor="recordatorio_dias"
         hint="Días entre avisos de lo mismo"
@@ -109,6 +112,27 @@ export function AlertasConfigForm({ config }: { config: AlertasConfig }) {
       >
         {diasInput("recordatorio_dias", config.recordatorio_dias, 90)}
       </Field>
+
+      <fieldset className="grid gap-4 border-t border-border pt-4 sm:col-span-3 sm:grid-cols-4 sm:items-start">
+        <legend className="pt-4 text-small font-semibold text-foreground">
+          Trámite sin movimiento, según su estado
+        </legend>
+        {TRAMITE_ESTADOS_EN_CURSO.map((estado) => {
+          const campo = umbralCampo(estado);
+          return (
+            <Field
+              key={estado}
+              label={TRAMITE_LABEL[estado]}
+              htmlFor={campo}
+              hint="Días sin revisión ni cambio"
+              error={errs[campo]}
+              required
+            >
+              {diasInput(campo, umbrales[estado], 365)}
+            </Field>
+          );
+        })}
+      </fieldset>
 
       <label className="flex cursor-pointer items-center gap-2.5 text-small font-medium text-foreground sm:col-span-3">
         <input

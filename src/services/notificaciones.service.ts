@@ -9,6 +9,7 @@
  */
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { TRAMITE_ESTADOS_EN_CURSO, type TramiteEstadoEnCurso } from "@/lib/proyecto-flujo";
 import type { Database } from "@/types/database";
 
 export type NotificacionTipo = Database["public"]["Enums"]["notificacion_tipo"];
@@ -26,7 +27,6 @@ export type Notificacion = {
 
 export type AlertasConfig = {
   proyecto_dias: number;
-  tramite_dias: number;
   recordatorio_dias: number;
   correo_activo: boolean;
 };
@@ -34,10 +34,17 @@ export type AlertasConfig = {
 /** Valores de la migración, por si la fila no se puede leer. */
 export const ALERTAS_CONFIG_DEFAULT: AlertasConfig = {
   proyecto_dias: 15,
-  tramite_dias: 30,
   recordatorio_dias: 7,
   correo_activo: true,
 };
+
+/** Días sin movimiento tolerados en cada estado en curso de un trámite. */
+export type UmbralesTramite = Record<TramiteEstadoEnCurso, number>;
+
+const UMBRAL_TRAMITE_DEFAULT = 30;
+
+/** Nombre del campo del formulario para el umbral de un estado. */
+export const umbralCampo = (estado: TramiteEstadoEnCurso) => `umbral_${estado}` as const;
 
 const LIMITE_LISTA = 100;
 
@@ -98,20 +105,34 @@ const dias = (max: number) =>
 
 export const alertasConfigSchema = z.object({
   proyecto_dias: dias(365),
-  tramite_dias: dias(365),
   recordatorio_dias: dias(90),
   // Un checkbox sin marcar no viaja en el FormData.
   correo_activo: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
-});
+  // Un campo por estado en curso; los nombres salen de `umbralCampo`.
+  umbral_pendiente: dias(365),
+  umbral_sellado_cfia: dias(365),
+  umbral_calificacion_rn: dias(365),
+  umbral_publico_defectuoso: dias(365),
+}) satisfies z.ZodType<Record<ReturnType<typeof umbralCampo>, number>>;
 
 export async function getAlertasConfig(): Promise<AlertasConfig> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("alertas_config")
-    .select("proyecto_dias, tramite_dias, recordatorio_dias, correo_activo")
+    .select("proyecto_dias, recordatorio_dias, correo_activo")
     .maybeSingle();
   if (error) throw new Error("No se pudo cargar la configuración de alertas.");
   return data ?? ALERTAS_CONFIG_DEFAULT;
+}
+
+export async function getUmbralesTramite(): Promise<UmbralesTramite> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("alertas_tramite_umbral").select("estado, dias");
+  if (error) throw new Error("No se pudieron cargar los umbrales de trámites.");
+  const porEstado = new Map((data ?? []).map((r) => [r.estado, r.dias]));
+  return Object.fromEntries(
+    TRAMITE_ESTADOS_EN_CURSO.map((e) => [e, porEstado.get(e) ?? UMBRAL_TRAMITE_DEFAULT])
+  ) as UmbralesTramite;
 }
 
 export async function updateAlertasConfig(
@@ -122,9 +143,26 @@ export async function updateAlertasConfig(
   // Si RLS rechaza el update (no es admin) no hay error, solo 0 filas.
   const { data: rows, error } = await supabase
     .from("alertas_config")
-    .update(data)
+    .update({
+      proyecto_dias: data.proyecto_dias,
+      recordatorio_dias: data.recordatorio_dias,
+      correo_activo: data.correo_activo,
+    })
     .eq("id", true)
     .select("id");
   if (error) throw new Error("No se pudo guardar la configuración.");
   if (!rows?.length) throw new Error("Solo un administrador puede cambiar la configuración.");
+
+  // Una fila fija por estado: update, no upsert (no hay política de insert).
+  const resultados = await Promise.all(
+    TRAMITE_ESTADOS_EN_CURSO.map((estado) =>
+      supabase
+        .from("alertas_tramite_umbral")
+        .update({ dias: data[umbralCampo(estado)] })
+        .eq("estado", estado)
+    )
+  );
+  if (resultados.some((r) => r.error)) {
+    throw new Error("No se pudieron guardar los umbrales de trámites.");
+  }
 }

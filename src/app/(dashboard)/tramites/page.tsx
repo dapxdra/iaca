@@ -4,7 +4,6 @@ import { dashboardPages } from "@/config/site";
 import { requireRole, isStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { listTramites, listAlertas } from "@/services/tramites.service";
-import { getAlertasConfig } from "@/services/notificaciones.service";
 import { listProyectoOptions, listSubproyectoOptions } from "@/services/proyectos.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { TableWrap, Th, Td } from "@/components/ui/table";
@@ -18,6 +17,9 @@ export const dynamic = "force-dynamic";
 
 const UMBRALES_FIJOS = [15, 30, 45];
 
+/** Opción por defecto del panel: cada trámite contra el umbral de su estado. */
+const POR_ESTADO = "estado";
+
 export default async function TramitesPage({
   searchParams,
 }: {
@@ -28,11 +30,13 @@ export default async function TramitesPage({
     requireRole(["admin", "oficina"]),
   ]);
   const canWrite = isStaff(profile.role);
-  // El umbral por defecto es el mismo que usan las notificaciones, así el
-  // panel muestra exactamente lo que se está avisando.
-  const { tramite_dias } = await getAlertasConfig();
-  const UMBRALES = [...new Set([...UMBRALES_FIJOS, tramite_dias])].sort((a, b) => a - b);
-  const umbralDias = UMBRALES.includes(Number(umbral)) ? Number(umbral) : tramite_dias;
+  // Por defecto, el umbral de cada estado: es el mismo que usan las
+  // notificaciones, así el panel muestra exactamente lo que se está avisando.
+  const umbralDias = UMBRALES_FIJOS.includes(Number(umbral)) ? Number(umbral) : undefined;
+  const opciones = [
+    { key: POR_ESTADO, label: "Por estado", activo: umbralDias === undefined },
+    ...UMBRALES_FIJOS.map((u) => ({ key: String(u), label: `${u}`, activo: u === umbralDias })),
+  ];
 
   const [alertas, tramites, proyectos, subproyectos] = await Promise.all([
     listAlertas(umbralDias),
@@ -65,7 +69,9 @@ export default async function TramitesPage({
               <ShieldCheck className="h-4 w-4 text-success" aria-hidden="true" />
             )}
             <h2 className="text-body font-semibold text-foreground">
-              Sin movimiento hace {umbralDias}+ días
+              {umbralDias === undefined
+                ? "Superan el umbral de su estado"
+                : `Sin movimiento hace ${umbralDias}+ días`}
               <span className="ml-1.5 tabular-nums text-muted-foreground">({alertas.length})</span>
             </h2>
           </div>
@@ -74,19 +80,19 @@ export default async function TramitesPage({
             role="group"
             aria-label="Umbral de días"
           >
-            {UMBRALES.map((u) => (
+            {opciones.map((o) => (
               <Link
-                key={u}
-                href={`/tramites?umbral=${u}`}
-                data-cy={`tramites-umbral-${u}`}
-                aria-current={u === umbralDias ? "true" : undefined}
+                key={o.key}
+                href={o.key === POR_ESTADO ? "/tramites" : `/tramites?umbral=${o.key}`}
+                data-cy={`tramites-umbral-${o.key}`}
+                aria-current={o.activo ? "true" : undefined}
                 className={`rounded-[4px] px-2.5 py-1 text-small font-medium tabular-nums transition-colors ${
-                  u === umbralDias
+                  o.activo
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {u}
+                {o.label}
               </Link>
             ))}
           </div>
@@ -118,8 +124,12 @@ export default async function TramitesPage({
                       {/* Los pendientes también entran al panel y aún no tienen envío. */}
                       {a.fecha_envio ? `envío ${formatDate(a.fecha_envio)}` : "sin enviar"}
                     </span>
-                    <span className="rounded-full border border-warning/40 bg-warning/12 px-2 py-0.5 text-small font-semibold tabular-nums text-warning">
-                      {a.dias_sin_revision} días
+                    <span
+                      title={a.umbral_dias ? `Umbral del estado: ${a.umbral_dias} días` : undefined}
+                      className="rounded-full border border-warning/40 bg-warning/12 px-2 py-0.5 text-small font-semibold tabular-nums text-warning"
+                    >
+                      {a.dias_sin_revision}
+                      {a.umbral_dias ? ` / ${a.umbral_dias}` : ""} días
                     </span>
                     <EstadoTramiteBadge estado={a.estado} />
                   </div>

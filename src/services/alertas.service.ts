@@ -39,7 +39,7 @@ export async function ejecutarRevisionAlertas(): Promise<ResultadoRevision> {
 
   const { data: configRow, error: configErr } = await admin
     .from("alertas_config")
-    .select("proyecto_dias, tramite_dias, recordatorio_dias, correo_activo")
+    .select("proyecto_dias, recordatorio_dias, correo_activo")
     .maybeSingle();
   if (configErr) throw new Error(`alertas_config: ${configErr.message}`);
   const config = configRow ?? ALERTAS_CONFIG_DEFAULT;
@@ -54,7 +54,8 @@ export async function ejecutarRevisionAlertas(): Promise<ResultadoRevision> {
       .select(
         "id, proyecto_id, entidad, tipo_tramite, estado, responsable_id, proyecto_responsable_id, proyecto_codigo, dias_sin_revision"
       )
-      .gte("dias_sin_revision", config.tramite_dias),
+      // Cada trámite contra el umbral de su estado (alertas_tramite_umbral, 0010_...).
+      .eq("supera_umbral", true),
     admin
       .from("profiles")
       .select("id, full_name, role")

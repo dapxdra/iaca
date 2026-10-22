@@ -36,13 +36,31 @@ export function transicionesValidas(desde: ProyectoEstado): ProyectoEstado[] {
 
 export type TramiteEstado = Database["public"]["Enums"]["tramite_estado"];
 
-/** Estados no finales. Debe coincidir con los triggers de 0008_... */
-export const TRAMITE_ESTADOS_EN_CURSO: TramiteEstado[] = [
+/**
+ * Estados no finales: bloquean el cierre y generan alertas. Debe coincidir
+ * con los triggers y la vista de 0010_... "Público y defectuoso" sigue en
+ * curso: el plano se corrige y se vuelve a presentar.
+ */
+export const TRAMITE_ESTADOS_EN_CURSO = [
   "pendiente",
-  "enviado",
-  "en_revision",
-  "observado",
-];
+  "sellado_cfia",
+  "calificacion_rn",
+  "publico_defectuoso",
+] as const satisfies readonly TramiteEstado[];
+
+export type TramiteEstadoEnCurso = (typeof TRAMITE_ESTADOS_EN_CURSO)[number];
+
+export function esTramiteEnCurso(estado: TramiteEstado): estado is TramiteEstadoEnCurso {
+  return (TRAMITE_ESTADOS_EN_CURSO as readonly TramiteEstado[]).includes(estado);
+}
+
+/** Orden en que se ofrecen los estados en los formularios. */
+export const TRAMITE_ESTADOS = [
+  ...TRAMITE_ESTADOS_EN_CURSO,
+  "publico_inscrito",
+  "publico_aprobado",
+  "publico_cancelado",
+] as const satisfies readonly TramiteEstado[];
 
 /** Un subproyecto cancelado no bloquea: ya no tiene trabajo pendiente. */
 export const SUBPROYECTO_ESTADOS_TERMINADOS: ProyectoEstado[] = ["cerrado", "cancelado"];

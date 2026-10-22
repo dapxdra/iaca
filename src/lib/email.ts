@@ -10,7 +10,7 @@ import "server-only";
  * notificaciones internas siguen funcionando sin correo configurado.
  */
 
-export type Email = { to: string; subject: string; html: string; text: string };
+export type Email = { to: string; subject: string; html: string; text: string; replyTo?: string };
 
 /** Máximo de correos por solicitud que acepta el endpoint por lotes. */
 const BATCH_MAX = 100;
@@ -33,6 +33,7 @@ export async function sendEmails(emails: Email[]): Promise<number> {
       subject: e.subject,
       html: e.html,
       text: e.text,
+      ...(e.replyTo ? { reply_to: e.replyTo } : {}),
     }));
     const res = await fetch("https://api.resend.com/emails/batch", {
       method: "POST",

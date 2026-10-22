@@ -281,14 +281,28 @@ export type Subproyecto = {
   orden: number;
 };
 
-export const subproyectoSchema = z.object({
-  proyecto_id: z.string().uuid(),
-  nombre: z.string().trim().min(2, "Requerido").max(200),
-  descripcion: z.preprocess(emptyToUndefined, z.string().trim().max(1000).optional()),
-  estado: z
-    .enum(["contacto", "campo", "calculo", "dibujo", "entrega", "cerrado", "cancelado"])
-    .default("contacto"),
-});
+export const subproyectoSchema = z
+  .object({
+    proyecto_id: z.string().uuid(),
+    nombre: z.string().trim().min(2, "Requerido").max(200),
+    descripcion: z.preprocess(emptyToUndefined, z.string().trim().max(1000).optional()),
+    estado: z
+      .enum(["contacto", "campo", "calculo", "dibujo", "entrega", "cerrado", "cancelado"])
+      .default("contacto"),
+    // Si se marca, el trámite se crea junto con el subproyecto, en estado pendiente.
+    necesita_tramite: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
+    entidad: z.preprocess(emptyToUndefined, z.string().trim().max(200).optional()),
+    tipo_tramite: z.preprocess(emptyToUndefined, z.string().trim().max(200).optional()),
+  })
+  .superRefine((v, ctx) => {
+    if (!v.necesita_tramite) return;
+    if (!v.entidad || v.entidad.length < 2) {
+      ctx.addIssue({ code: "custom", path: ["entidad"], message: "Requerido" });
+    }
+    if (!v.tipo_tramite || v.tipo_tramite.length < 2) {
+      ctx.addIssue({ code: "custom", path: ["tipo_tramite"], message: "Requerido" });
+    }
+  });
 
 export async function listSubproyectos(proyectoId: string): Promise<Subproyecto[]> {
   const supabase = await createClient();
@@ -305,10 +319,29 @@ export async function listSubproyectos(proyectoId: string): Promise<Subproyecto[
 export async function createSubproyecto(
   input: z.infer<typeof subproyectoSchema>
 ): Promise<void> {
-  const data = subproyectoSchema.parse(input);
+  const { necesita_tramite, entidad, tipo_tramite, ...subproyecto } =
+    subproyectoSchema.parse(input);
   const supabase = await createClient();
-  const { error } = await supabase.from("subproyectos").insert(data);
+  const { data: creado, error } = await supabase
+    .from("subproyectos")
+    .insert(subproyecto)
+    .select("id")
+    .single();
   if (error) throw new Error("No se pudo crear el subproyecto.");
+  if (!necesita_tramite) return;
+
+  const { error: tramiteError } = await supabase.from("tramites_gubernamentales").insert({
+    proyecto_id: subproyecto.proyecto_id,
+    subproyecto_id: creado.id,
+    entidad: entidad!,
+    tipo_tramite: tipo_tramite!,
+    estado: "pendiente",
+  });
+  if (tramiteError) {
+    // Se deshace el subproyecto: quedaría creado sin el trámite que se pidió.
+    await supabase.from("subproyectos").delete().eq("id", creado.id);
+    throw new Error("No se pudo crear el trámite del subproyecto. No se guardó nada.");
+  }
 }
 
 /** Opciones para el select de subproyecto del formulario de trámites. */

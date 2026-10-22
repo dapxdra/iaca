@@ -15,7 +15,7 @@ import { listBitacora } from "@/services/bitacora.service";
 import { listTramites } from "@/services/tramites.service";
 import {
   SUBPROYECTO_ESTADOS_TERMINADOS,
-  TRAMITE_ESTADOS_EN_CURSO,
+  esTramiteEnCurso,
   motivoBloqueoCierre,
 } from "@/lib/proyecto-flujo";
 import { getCobroProyecto } from "@/services/cobros.service";
@@ -61,7 +61,7 @@ export default async function ProyectoDetallePage({
   const cancelado = proyecto.estado === "cancelado";
   const cerrado = proyecto.estado === "cerrado";
 
-  const tramitesEnCurso = tramites.filter((t) => TRAMITE_ESTADOS_EN_CURSO.includes(t.estado));
+  const tramitesEnCurso = tramites.filter((t) => esTramiteEnCurso(t.estado));
   const bloqueoCierreProyecto = motivoBloqueoCierre({
     tramitesEnCurso: tramitesEnCurso.length,
     subproyectosAbiertos: subproyectos.filter(

@@ -206,8 +206,15 @@ Vercel Cron ([vercel.json](./vercel.json), 13:00 UTC = 7:00 en Costa Rica) →
   cambio de estado (`estado_cambiado_at`, lo sella un trigger) y su última bitácora; un
   trámite, desde lo último entre envío, revisión y cambio de estado. No usar `updated_at`:
   cambia con cualquier edición.
-- **Umbrales** en `alertas_config` (fila única, la edita solo admin). El panel de
-  `/tramites` usa el mismo umbral por defecto, para que muestre lo mismo que se avisa.
+- **Umbrales**: el de proyectos en `alertas_config` (fila única); los de trámites, uno
+  por estado en curso en `alertas_tramite_umbral` (0010_...). Los edita solo admin. La
+  vista expone `supera_umbral` y el panel de `/tramites` filtra por eso por defecto, para
+  que muestre lo mismo que se avisa.
+- **Estados de trámite** (0010_...): Pendiente → Sellado CFIA → Calificación RN →
+  Público e Inscrito / Aprobado / Cancelado. "Público y Defectuoso" sigue en curso (se
+  corrige y se vuelve a presentar). La lista de estados en curso vive en
+  `TRAMITE_ESTADOS_EN_CURSO` (`src/lib/proyecto-flujo.ts`) y en los triggers/vista SQL:
+  cambiarla en ambos lados.
 - **Service role**: `notificaciones` no tiene política de insert; solo el job escribe. El
   usuario lee las suyas y solo puede actualizar `leida_at` (grant por columna).
 - **Destinatarios**: todos los admin + el responsable si es admin/oficina. No se repite el
@@ -230,6 +237,9 @@ Casilla "Dar acceso al portal" en el diálogo de cliente →
   `raw_user_meta_data`, que lo escribe quien se registra. Sin rol ahí, el perfil nace inactivo.
 - Nunca cambiar el rol de un usuario interno desde este flujo: si el correo ya es de un
   usuario no-cliente, se rechaza.
+- El cliente ve sus trámites (de sus proyectos y subproyectos) en `/mis-proyectos/[id]` a
+  través de `vw_tramites_cliente` (0011_...), no de la tabla: RLS no oculta columnas y
+  `notas` es interna. La tabla `tramites_gubernamentales` sigue siendo solo staff.
 
 ## Colores de estado: usar los tokens, no los de Tailwind
 

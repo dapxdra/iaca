@@ -40,13 +40,41 @@ export type Pago = {
 const COBRO_COLUMNS =
   "proyecto_id, codigo, nombre, cliente_id, monto_cobrar, total_pagado, saldo_pendiente, fecha_ultimo_pago";
 
-/** Estado de cobro de todos los proyectos, del saldo más alto al más bajo. */
-export async function listCobrosProyectos(): Promise<CobroProyecto[]> {
+export type EstadoCobro = "pendiente" | "al_dia" | "sin_monto";
+
+export type CobroFilters = {
+  search?: string;
+  estado?: EstadoCobro;
+  clienteId?: string;
+};
+
+const ESTADOS_COBRO: EstadoCobro[] = ["pendiente", "al_dia", "sin_monto"];
+
+export function parseEstadoCobro(value: string | undefined): EstadoCobro | undefined {
+  return ESTADOS_COBRO.find((e) => e === value);
+}
+
+/** Estado de cobro de los proyectos, del saldo más alto al más bajo. */
+export async function listCobrosProyectos(filters: CobroFilters = {}): Promise<CobroProyecto[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("vw_cobros_proyecto")
     .select(COBRO_COLUMNS)
     .order("saldo_pendiente", { ascending: false, nullsFirst: false });
+
+  if (filters.search?.trim()) {
+    // Las comas y paréntesis rompen la sintaxis de `or()` de PostgREST.
+    const term = `%${filters.search.trim().replace(/[,()]/g, " ")}%`;
+    query = query.or(`codigo.ilike.${term},nombre.ilike.${term}`);
+  }
+  if (filters.estado === "pendiente") query = query.gt("saldo_pendiente", 0);
+  if (filters.estado === "al_dia") query = query.not("monto_cobrar", "is", null).lte("saldo_pendiente", 0);
+  if (filters.estado === "sin_monto") query = query.is("monto_cobrar", null);
+  if (filters.clienteId && z.string().uuid().safeParse(filters.clienteId).success) {
+    query = query.eq("cliente_id", filters.clienteId);
+  }
+
+  const { data, error } = await query;
   if (error) throw new Error("No se pudo cargar el estado de cobro de los proyectos.");
   return (data ?? []) as CobroProyecto[];
 }

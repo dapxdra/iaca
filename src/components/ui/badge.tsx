@@ -48,20 +48,22 @@ export function EstadoProyectoBadge({ estado }: { estado: ProyectoEstado }) {
 
 const TRAMITE_LABEL: Record<TramiteEstado, string> = {
   pendiente: "Pendiente",
-  enviado: "Enviado",
-  en_revision: "En revisión",
-  observado: "Observado",
-  aprobado: "Aprobado",
-  rechazado: "Rechazado",
+  sellado_cfia: "Sellado CFIA",
+  calificacion_rn: "Calificación RN",
+  publico_defectuoso: "Público y Defectuoso",
+  publico_inscrito: "Público e Inscrito",
+  publico_aprobado: "Público y Aprobado",
+  publico_cancelado: "Público y Cancelado",
 };
 
 const TRAMITE_TONE: Record<TramiteEstado, Tone> = {
   pendiente: T("bg-slate", "border-slate/25 bg-slate/8"),
-  enviado: T("bg-blue-500", "border-blue-500/30 bg-blue-500/10"),
-  en_revision: T("bg-amber-500", "border-amber-500/30 bg-amber-500/10"),
-  observado: T("bg-red-600", "border-red-600/30 bg-red-600/10"),
-  aprobado: T("bg-green-600", "border-green-600/30 bg-green-600/10"),
-  rechazado: T("bg-red-600", "border-red-600/30 bg-red-600/10"),
+  sellado_cfia: T("bg-blue-500", "border-blue-500/30 bg-blue-500/10"),
+  calificacion_rn: T("bg-amber-500", "border-amber-500/30 bg-amber-500/10"),
+  publico_defectuoso: T("bg-red-600", "border-red-600/30 bg-red-600/10"),
+  publico_inscrito: T("bg-green-600", "border-green-600/30 bg-green-600/10"),
+  publico_aprobado: T("bg-green-600", "border-green-600/30 bg-green-600/10"),
+  publico_cancelado: T("bg-slate", "border-slate/25 bg-slate/8"),
 };
 
 export function EstadoTramiteBadge({ estado }: { estado: TramiteEstado }) {

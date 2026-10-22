@@ -212,6 +212,21 @@ export const dashboardPages: Record<string, DashboardPageContent> = {
   },
 };
 
+/** Valores iniciales del trámite que se crea junto con un subproyecto. */
+export const subproyectoTramiteDefaults = {
+  entidad: "Registro Nacional — Catastro",
+  tipoTramite: "Inscripción de plano catastrado",
+  hint: "El trámite se crea en estado Pendiente y queda asociado a este subproyecto.",
+};
+
+export const cotizadorContent = {
+  title: "Calculadora de cotizaciones",
+  description:
+    "Honorarios mínimos según el Reglamento de Tarifas del Colegio de Ingenieros Topógrafos (Decreto 17481-MOPT) y los aranceles de peritajes y avalúos del CFIA (Decreto 35298-MOPT).",
+  disclaimer:
+    "Estimación con las tarifas mínimas del reglamento. El art. 22 permite pactar por escrito un monto mayor. No incluye IVA.",
+};
+
 export const homeContent = {
   loginLabel: "Acceder",
   contactCtaLabel: "Contáctanos",
@@ -267,6 +282,12 @@ export const faqContent = {
       pregunta: "¿Qué es un plano catastrado y cuándo lo necesito?",
       respuesta:
         "Es el plano oficial de una propiedad, inscrito en el Catastro Nacional, que define su forma, medidas y linderos. Se necesita para inscribir o traspasar una finca, segregar o unir lotes, solicitar un permiso de construcción, tramitar un crédito hipotecario y para cualquier gestión municipal sobre el inmueble.",
+    },
+    {
+      key: "que-es-mapa-catastral",
+      pregunta: "¿Qué es un mapa catastral?",
+      respuesta:
+        "Es la representación gráfica oficial de todas las propiedades de una zona, que muestra la ubicación, forma y colindancias de cada predio dentro del territorio. Mientras el plano catastrado describe una sola finca, el mapa catastral las integra en conjunto y las vincula con su información registral, lo que permite verificar que un terreno no se traslape con sus vecinos y que su ubicación coincida con la realidad.",
     },
     {
       key: "zonas",
@@ -378,11 +399,16 @@ export const contactFormContent = {
   nombreLabel: "Nombre completo",
   emailLabel: "Correo electrónico",
   telefonoLabel: "Teléfono",
-  telefonoHint: "Opcional. Incluya el código de país si está fuera de Costa Rica.",
+  telefonoHint: "Incluya el código de país si está fuera de Costa Rica.",
   servicioLabel: "Servicio de interés",
   servicioPlaceholder: "Seleccione un servicio",
-  ubicacionLabel: "Ubicación del terreno",
-  ubicacionHint: "Opcional. Provincia y cantón nos ayudan a estimar la visita de campo.",
+  provinciaLabel: "Provincia del terreno",
+  provinciaPlaceholder: "Seleccione la provincia",
+  cantonLabel: "Cantón",
+  cantonPlaceholder: "Seleccione el cantón",
+  cantonSinProvincia: "Primero elija la provincia",
+  ubicacionLabel: "Distrito o señas",
+  ubicacionHint: "Opcional. Nos ayuda a estimar la visita de campo.",
   mensajeLabel: "Mensaje",
   mensajePlaceholder:
     "Describa el terreno y qué necesita: área aproximada, si tiene plano catastrado, para qué va a usar el plano…",
@@ -476,7 +502,7 @@ export const privacyPolicy: LegalDocument = {
         "Solo recolectamos los datos que usted nos entrega voluntariamente al contactarnos o al contratar un servicio. No compramos bases de datos ni obtenemos sus datos de terceros.",
       ],
       lista: [
-        "Formulario de contacto del sitio: nombre, correo electrónico y, si usted lo indica, teléfono, ubicación del terreno y el contenido de su mensaje.",
+        "Formulario de contacto del sitio: nombre, correo electrónico, teléfono, provincia y cantón del terreno, el contenido de su mensaje y, si usted lo indica, señas de la ubicación.",
         "Contratación de un servicio: además de lo anterior, los datos necesarios para ejecutar y facturar el trabajo, como identificación, número de finca y ubicación exacta de la propiedad.",
         "Datos técnicos de seguridad: al enviar el formulario guardamos una versión cifrada e irreversible de su dirección IP, únicamente para limitar envíos automatizados y abuso del formulario. No permite reconstruir su IP original ni identificarlo.",
       ],

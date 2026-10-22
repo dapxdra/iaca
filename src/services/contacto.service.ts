@@ -4,7 +4,9 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { emptyToUndefined } from "@/lib/form";
-import { homeContent } from "@/config/site";
+import { escapeHtml, isEmailConfigured, sendEmails } from "@/lib/email";
+import { esCantonDe, PROVINCIAS } from "@/lib/costa-rica";
+import { contactContent, homeContent, servicioOptions } from "@/config/site";
 import type { Database } from "@/types/database";
 
 /**
@@ -60,31 +62,41 @@ export const contactoFormSchema = z.object({
     .min(5, "Requerido")
     .max(200, "El correo es demasiado largo.")
     .email("Revise el correo: no parece una dirección válida."),
-  telefono: z.preprocess(
-    emptyToUndefined,
-    z
-      .string()
-      .trim()
-      .max(40, "El teléfono es demasiado largo.")
-      // Dígitos y los separadores habituales. Evita que el campo se use para
-      // colar texto arbitrario.
-      .regex(/^[\d\s+()./-]+$/, "Use solo números y los signos + ( ) - .")
-      .optional()
-  ),
+  telefono: z
+    .string()
+    .trim()
+    .min(8, "Escriba un teléfono de al menos 8 dígitos.")
+    .max(40, "El teléfono es demasiado largo.")
+    // Dígitos y los separadores habituales. Evita que el campo se use para
+    // colar texto arbitrario.
+    .regex(/^[\d\s+()./-]+$/, "Use solo números y los signos + ( ) - .")
+    .refine((t) => t.replace(/\D/g, "").length >= 8, "Escriba un teléfono de al menos 8 dígitos."),
   servicio: z.preprocess(
     emptyToUndefined,
     z.enum(SERVICIO_KEYS, { message: "Seleccione un servicio de la lista." }).optional()
   ),
+  provincia: z.enum(PROVINCIAS, { message: "Seleccione la provincia del terreno." }),
+  canton: z.string().trim().min(1, "Seleccione el cantón del terreno."),
+  // Distrito, poblado o señas: complementa provincia y cantón.
   ubicacion: z.preprocess(
     emptyToUndefined,
-    z.string().trim().max(200, "La ubicación es demasiado larga.").optional()
+    z.string().trim().max(150, "Las señas son demasiado largas.").optional()
   ),
   mensaje: z
     .string()
     .trim()
     .min(10, "Cuéntenos un poco más: al menos 10 caracteres.")
     .max(4000, "El mensaje es demasiado largo. Máximo 4000 caracteres."),
+}).refine((d) => esCantonDe(d.provincia, d.canton), {
+  path: ["canton"],
+  message: "El cantón no corresponde a la provincia seleccionada.",
 });
+
+/** Lo que se guarda en `contacto_mensajes.ubicacion`: "Cantón, Provincia — señas". */
+function ubicacionCompleta(d: ContactoFormInput): string {
+  const base = `${d.canton}, ${d.provincia}`;
+  return d.ubicacion ? `${base} — ${d.ubicacion}` : base;
+}
 
 export type ContactoFormInput = z.infer<typeof contactoFormSchema>;
 
@@ -206,7 +218,7 @@ export async function crearMensajeContacto(
     email: data.email,
     telefono: data.telefono ?? null,
     servicio: data.servicio ?? null,
-    ubicacion: data.ubicacion ?? null,
+    ubicacion: ubicacionCompleta(data),
     mensaje: data.mensaje,
     estado: meta.marcarComoSpam ? "spam" : "nuevo",
     ip_hash: ipHash,
@@ -218,6 +230,50 @@ export async function crearMensajeContacto(
     // El detalle real queda en el log del servidor; al usuario un mensaje genérico.
     console.error("[contacto] no se pudo guardar el mensaje:", error.message);
     throw new Error("No se pudo enviar la solicitud. Intente de nuevo o escríbanos por WhatsApp.");
+  }
+
+  // Los marcados como spam no se notifican: quedan en la tabla para revisión.
+  if (!meta.marcarComoSpam) await notificarMensajeContacto(data);
+}
+
+/**
+ * Avisa por correo a la bandeja del negocio. La solicitud ya quedó guardada,
+ * así que si Resend falla solo se registra: el visitante no tiene por qué
+ * reintentar (y duplicar) algo que sí llegó.
+ *
+ * El aviso va solo a nuestra bandeja, nunca al correo que escribió el
+ * visitante: un formulario que envía correos a direcciones arbitrarias es un
+ * relé de spam.
+ */
+async function notificarMensajeContacto(data: ContactoFormInput): Promise<void> {
+  if (!isEmailConfigured()) {
+    console.warn("[contacto] RESEND_API_KEY o ALERTAS_EMAIL_FROM sin configurar: no se envió aviso.");
+    return;
+  }
+  const destino = process.env.CONTACT_EMAIL_TO || contactContent.email;
+  const servicio = servicioOptions.find((s) => s.value === data.servicio)?.label ?? "Sin especificar";
+  const filas: [string, string][] = [
+    ["Nombre", data.nombre],
+    ["Correo", data.email],
+    ["Teléfono", data.telefono ?? "—"],
+    ["Servicio", servicio],
+    ["Ubicación", ubicacionCompleta(data)],
+  ];
+
+  try {
+    await sendEmails([
+      {
+        to: destino,
+        replyTo: data.email,
+        subject: `Nueva solicitud de cotización — ${data.nombre} (${data.canton})`,
+        text: `${filas.map(([k, v]) => `${k}: ${v}`).join("\n")}\n\nMensaje:\n${data.mensaje}`,
+        html: `<table cellpadding="4">${filas
+          .map(([k, v]) => `<tr><td><strong>${k}</strong></td><td>${escapeHtml(v)}</td></tr>`)
+          .join("")}</table><p><strong>Mensaje</strong></p><p style="white-space:pre-wrap">${escapeHtml(data.mensaje)}</p>`,
+      },
+    ]);
+  } catch (error) {
+    console.error("[contacto] no se pudo enviar el aviso por correo:", error);
   }
 }
 
