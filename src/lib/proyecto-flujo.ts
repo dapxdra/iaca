@@ -54,6 +54,12 @@ export function esTramiteEnCurso(estado: TramiteEstado): estado is TramiteEstado
   return (TRAMITE_ESTADOS_EN_CURSO as readonly TramiteEstado[]).includes(estado);
 }
 
+/**
+ * Nombre del campo del formulario para el umbral de un estado. Vive acá y no
+ * en notificaciones.service.ts porque lo usa un componente cliente.
+ */
+export const umbralCampo = (estado: TramiteEstadoEnCurso) => `umbral_${estado}` as const;
+
 /** Orden en que se ofrecen los estados en los formularios. */
 export const TRAMITE_ESTADOS = [
   ...TRAMITE_ESTADOS_EN_CURSO,

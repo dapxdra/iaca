@@ -6,12 +6,8 @@ import { Field, Input } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { idleFormState, type FormState } from "@/lib/form";
 import { TRAMITE_LABEL } from "@/components/ui/badge";
-import { TRAMITE_ESTADOS_EN_CURSO } from "@/lib/proyecto-flujo";
-import {
-  umbralCampo,
-  type AlertasConfig,
-  type UmbralesTramite,
-} from "@/services/notificaciones.service";
+import { TRAMITE_ESTADOS_EN_CURSO, umbralCampo } from "@/lib/proyecto-flujo";
+import type { AlertasConfig, UmbralesTramite } from "@/services/notificaciones.service";
 import { updateAlertasConfigAction } from "./actions";
 
 type Action = (prev: FormState, formData: FormData) => Promise<FormState>;

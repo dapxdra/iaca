@@ -9,7 +9,11 @@
  */
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { TRAMITE_ESTADOS_EN_CURSO, type TramiteEstadoEnCurso } from "@/lib/proyecto-flujo";
+import {
+  TRAMITE_ESTADOS_EN_CURSO,
+  umbralCampo,
+  type TramiteEstadoEnCurso,
+} from "@/lib/proyecto-flujo";
 import type { Database } from "@/types/database";
 
 export type NotificacionTipo = Database["public"]["Enums"]["notificacion_tipo"];
@@ -42,9 +46,6 @@ export const ALERTAS_CONFIG_DEFAULT: AlertasConfig = {
 export type UmbralesTramite = Record<TramiteEstadoEnCurso, number>;
 
 const UMBRAL_TRAMITE_DEFAULT = 30;
-
-/** Nombre del campo del formulario para el umbral de un estado. */
-export const umbralCampo = (estado: TramiteEstadoEnCurso) => `umbral_${estado}` as const;
 
 const LIMITE_LISTA = 100;
 
