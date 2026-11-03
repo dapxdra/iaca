@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { PROYECTO_LABEL } from "@/components/ui/badge";
 import { ESTADO_FLOW } from "@/lib/proyecto-flujo";
+import { DateRangeFilter } from "../_components/date-range-filter";
 
 const ESTADOS = [...ESTADO_FLOW, "cerrado", "cancelado"] as const;
 
@@ -16,7 +17,7 @@ const selectClass =
 const chevron =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23575d83' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")";
 
-/** Selects de estado y zona que escriben en la URL; el listado (server) los lee. */
+/** Selects de estado y zona y rango de fecha de inicio que escriben en la URL; el listado (server) los lee. */
 export function ProyectoFilters({ zonas }: { zonas: string[] }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -24,7 +25,9 @@ export function ProyectoFilters({ zonas }: { zonas: string[] }) {
 
   const estado = searchParams.get("estado") ?? "";
   const zona = searchParams.get("zona") ?? "";
-  const hasFilters = Boolean(estado || zona);
+  const hasFilters = Boolean(
+    estado || zona || searchParams.get("desde") || searchParams.get("hasta")
+  );
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams);
@@ -37,6 +40,8 @@ export function ProyectoFilters({ zonas }: { zonas: string[] }) {
     const params = new URLSearchParams(searchParams);
     params.delete("estado");
     params.delete("zona");
+    params.delete("desde");
+    params.delete("hasta");
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
@@ -73,6 +78,8 @@ export function ProyectoFilters({ zonas }: { zonas: string[] }) {
           </option>
         ))}
       </select>
+
+      <DateRangeFilter dataCy="proyectos" label="fecha de inicio" clearable={false} />
 
       {hasFilters && (
         <button

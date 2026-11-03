@@ -3,9 +3,11 @@ import { AlertTriangle, FileStack, ShieldCheck } from "lucide-react";
 import { dashboardPages } from "@/config/site";
 import { requireRole, isStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
+import { parseDateRange } from "@/lib/date-range";
 import { listTramites, listAlertas } from "@/services/tramites.service";
 import { listProyectoOptions, listSubproyectoOptions } from "@/services/proyectos.service";
 import { DashboardPageHeader } from "../_components/page-header";
+import { DateRangeFilter } from "../_components/date-range-filter";
 import { TableWrap, Th, Td } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EstadoTramiteBadge } from "@/components/ui/badge";
@@ -23,9 +25,9 @@ const POR_ESTADO = "estado";
 export default async function TramitesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ umbral?: string }>;
+  searchParams: Promise<{ umbral?: string; desde?: string; hasta?: string }>;
 }) {
-  const [{ umbral }, profile] = await Promise.all([
+  const [{ umbral, ...fechas }, profile] = await Promise.all([
     searchParams,
     requireRole(["admin", "oficina"]),
   ]);
@@ -37,10 +39,21 @@ export default async function TramitesPage({
     { key: POR_ESTADO, label: "Por estado", activo: umbralDias === undefined },
     ...UMBRALES_FIJOS.map((u) => ({ key: String(u), label: `${u}`, activo: u === umbralDias })),
   ];
+  const fechaEnvio = parseDateRange(fechas);
+  const hasFilters = Boolean(fechaEnvio.desde || fechaEnvio.hasta);
+
+  // Cambiar el umbral del panel no debe perder el rango de fechas de la tabla.
+  function umbralHref(key: string) {
+    const qs = new URLSearchParams();
+    if (key !== POR_ESTADO) qs.set("umbral", key);
+    if (fechaEnvio.desde) qs.set("desde", fechaEnvio.desde);
+    if (fechaEnvio.hasta) qs.set("hasta", fechaEnvio.hasta);
+    return qs.size > 0 ? `/tramites?${qs.toString()}` : "/tramites";
+  }
 
   const [alertas, tramites, proyectos, subproyectos] = await Promise.all([
     listAlertas(umbralDias),
-    listTramites(),
+    listTramites(undefined, fechaEnvio),
     canWrite ? listProyectoOptions() : Promise.resolve([]),
     canWrite ? listSubproyectoOptions() : Promise.resolve([]),
   ]);
@@ -83,7 +96,7 @@ export default async function TramitesPage({
             {opciones.map((o) => (
               <Link
                 key={o.key}
-                href={o.key === POR_ESTADO ? "/tramites" : `/tramites?umbral=${o.key}`}
+                href={umbralHref(o.key)}
                 data-cy={`tramites-umbral-${o.key}`}
                 aria-current={o.activo ? "true" : undefined}
                 className={`rounded-[4px] px-2.5 py-1 text-small font-medium tabular-nums transition-colors ${
@@ -141,7 +154,19 @@ export default async function TramitesPage({
       </section>
 
       {/* Tabla completa */}
-      {tramites.length === 0 ? (
+      {(tramites.length > 0 || hasFilters) && (
+        <DateRangeFilter dataCy="tramites" label="fecha de envío" />
+      )}
+
+      {tramites.length === 0 && hasFilters ? (
+        <div className="rounded-lg border border-border bg-surface-raised shadow-sm">
+          <EmptyState
+            icon={FileStack}
+            title="Sin coincidencias"
+            description="No hay trámites enviados en ese rango de fechas."
+          />
+        </div>
+      ) : tramites.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface-raised shadow-sm">
           <EmptyState
             icon={FileStack}

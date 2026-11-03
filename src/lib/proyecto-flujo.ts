@@ -68,6 +68,20 @@ export const TRAMITE_ESTADOS = [
   "publico_cancelado",
 ] as const satisfies readonly TramiteEstado[];
 
+export type SubproyectoTipo = Database["public"]["Enums"]["subproyecto_tipo"];
+
+export const SUBPROYECTO_TIPOS = [
+  "plano_catastrado",
+  "consultoria",
+  "alineamiento",
+] as const satisfies readonly SubproyectoTipo[];
+
+export const SUBPROYECTO_TIPO_LABEL: Record<SubproyectoTipo, string> = {
+  plano_catastrado: "Plano catastrado",
+  consultoria: "Consultoría",
+  alineamiento: "Alineamiento",
+};
+
 /** Un subproyecto cancelado no bloquea: ya no tiene trabajo pendiente. */
 export const SUBPROYECTO_ESTADOS_TERMINADOS: ProyectoEstado[] = ["cerrado", "cancelado"];
 

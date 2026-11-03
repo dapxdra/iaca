@@ -783,7 +783,7 @@ export const SERVICIOS: Servicio[] = [
   },
   {
     id: "avaluo-credito",
-    grupo: "Peritajes y avalúos)",
+    grupo: "Peritajes y avalúos",
     nombre: "Avalúo para crédito hipotecario o prendario",
     articulo: "",
     traslado: "avaluo",

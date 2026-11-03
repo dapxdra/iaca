@@ -82,7 +82,7 @@ export function EstadoControl({
             name="estado"
             value={destino}
             onChange={(e) => setDestino(e.target.value as ProyectoEstado)}
-            className={compact ? "h-8 w-36 text-small" : "w-52"}
+            className={compact ? "h-8 w-44 py-0 pl-2.5 text-small" : "w-52"}
             data-cy={`${dataCy}-select`}
             required
           >

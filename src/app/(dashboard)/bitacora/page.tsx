@@ -3,9 +3,11 @@ import { ClipboardList, ImageOff } from "lucide-react";
 import { dashboardPages } from "@/config/site";
 import { requireRole, isStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
+import { parseDateRange } from "@/lib/date-range";
 import { listBitacora } from "@/services/bitacora.service";
 import { listProyectoOptions } from "@/services/proyectos.service";
 import { DashboardPageHeader } from "../_components/page-header";
+import { DateRangeFilter } from "../_components/date-range-filter";
 import { TableWrap, Th, Td } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DeleteForm } from "@/components/ui/delete-form";
@@ -22,10 +24,19 @@ function horas(inicio: string | null, fin: string | null) {
   return `${inicio?.slice(0, 5) ?? "··"} – ${fin?.slice(0, 5) ?? "··"}`;
 }
 
-export default async function BitacoraPage() {
-  const profile = await requireRole(["admin", "oficina", "campo"]);
+export default async function BitacoraPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ desde?: string; hasta?: string }>;
+}) {
+  const [params, profile] = await Promise.all([
+    searchParams,
+    requireRole(["admin", "oficina", "campo"]),
+  ]);
+  const fecha = parseDateRange(params);
+  const hasFilters = Boolean(fecha.desde || fecha.hasta);
   const [entradas, proyectos] = await Promise.all([
-    listBitacora({ limit: 150 }),
+    listBitacora({ limit: 150, fecha }),
     listProyectoOptions(),
   ]);
 
@@ -39,6 +50,10 @@ export default async function BitacoraPage() {
       <InstallPrompt />
       <OutboxPanel />
       <OfflineSetup proyectos={proyectos} />
+
+      {proyectos.length > 0 && (entradas.length > 0 || hasFilters) && (
+        <DateRangeFilter dataCy="bitacora" />
+      )}
 
       {proyectos.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface-raised shadow-sm">
@@ -56,6 +71,14 @@ export default async function BitacoraPage() {
                 </Link>
               ) : null
             }
+          />
+        </div>
+      ) : entradas.length === 0 && hasFilters ? (
+        <div className="rounded-lg border border-border bg-surface-raised shadow-sm">
+          <EmptyState
+            icon={ClipboardList}
+            title="Sin coincidencias"
+            description="No hay entradas en ese rango de fechas."
           />
         </div>
       ) : entradas.length === 0 ? (

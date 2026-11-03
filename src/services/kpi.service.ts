@@ -1,7 +1,8 @@
 /**
  * Servicio de Reportes KPI. Solo lectura — se apoya en las vistas
- * `vw_kpi_proyecto` y `vw_kpi_zona` (supabase/migrations/0001_init.sql), que
- * ya calculan los agregados en la base de datos.
+ * `vw_kpi_proyecto`, `vw_kpi_zona` (supabase/migrations/0001_init.sql) y
+ * `vw_kpi_tipo_servicio` (0012_...), que ya calculan los agregados en la base
+ * de datos.
  */
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
@@ -26,6 +27,16 @@ export type KpiZona = {
   total_proyectos: number;
   proyectos_cerrados: number;
   proyectos_activos: number;
+  promedio_dias_ciclo: number | null;
+};
+
+export type KpiTipoServicio = {
+  tipo_servicio: string | null;
+  total_proyectos: number;
+  proyectos_cerrados: number;
+  proyectos_activos: number;
+  entregados_a_tiempo: number;
+  entregados_tarde: number;
   promedio_dias_ciclo: number | null;
 };
 
@@ -58,6 +69,18 @@ export async function getKpiZonas(): Promise<KpiZona[]> {
     .order("total_proyectos", { ascending: false });
   if (error) throw new Error("No se pudieron cargar los KPI por zona.");
   return (data ?? []) as unknown as KpiZona[];
+}
+
+export async function getKpiTiposServicio(): Promise<KpiTipoServicio[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vw_kpi_tipo_servicio")
+    .select(
+      "tipo_servicio, total_proyectos, proyectos_cerrados, proyectos_activos, entregados_a_tiempo, entregados_tarde, promedio_dias_ciclo"
+    )
+    .order("total_proyectos", { ascending: false });
+  if (error) throw new Error("No se pudieron cargar los KPI por tipo de servicio.");
+  return (data ?? []) as unknown as KpiTipoServicio[];
 }
 
 /** Totales de cabecera derivados de los KPI por proyecto. */

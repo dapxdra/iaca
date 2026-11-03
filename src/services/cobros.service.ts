@@ -12,6 +12,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { emptyToUndefined } from "@/lib/form";
+import type { DateRange } from "@/lib/date-range";
 import type { Database } from "@/types/database";
 
 export type MetodoPago = Database["public"]["Enums"]["metodo_pago"];
@@ -46,6 +47,8 @@ export type CobroFilters = {
   search?: string;
   estado?: EstadoCobro;
   clienteId?: string;
+  /** La vista agrega los pagos por proyecto; la última fecha de pago es la única que expone. */
+  ultimoPago?: DateRange;
 };
 
 const ESTADOS_COBRO: EstadoCobro[] = ["pendiente", "al_dia", "sin_monto"];
@@ -73,6 +76,8 @@ export async function listCobrosProyectos(filters: CobroFilters = {}): Promise<C
   if (filters.clienteId && z.string().uuid().safeParse(filters.clienteId).success) {
     query = query.eq("cliente_id", filters.clienteId);
   }
+  if (filters.ultimoPago?.desde) query = query.gte("fecha_ultimo_pago", filters.ultimoPago.desde);
+  if (filters.ultimoPago?.hasta) query = query.lte("fecha_ultimo_pago", filters.ultimoPago.hasta);
 
   const { data, error } = await query;
   if (error) throw new Error("No se pudo cargar el estado de cobro de los proyectos.");

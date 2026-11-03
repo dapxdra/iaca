@@ -6,6 +6,7 @@ import { formatColones, formatDate } from "@/lib/format";
 import {
   getProyecto,
   listSubproyectos,
+  listTiposServicio,
   listZonas,
   ESTADO_FLOW,
 } from "@/services/proyectos.service";
@@ -13,8 +14,10 @@ import { listClienteOptions } from "@/services/clientes.service";
 import { listProfileOptions } from "@/services/profiles.service";
 import { listBitacora } from "@/services/bitacora.service";
 import { listTramites } from "@/services/tramites.service";
+import { listEventos } from "@/services/eventos.service";
 import {
   SUBPROYECTO_ESTADOS_TERMINADOS,
+  SUBPROYECTO_TIPO_LABEL,
   esTramiteEnCurso,
   motivoBloqueoCierre,
 } from "@/lib/proyecto-flujo";
@@ -27,10 +30,12 @@ import { DeleteForm } from "@/components/ui/delete-form";
 import { ProyectoDialog } from "../proyecto-dialog";
 import { EstadoControl } from "./estado-control";
 import { SubproyectoDialog } from "./subproyecto-dialog";
+import { EventoDialog } from "./evento-dialog";
 import {
   cambiarEstadoAction,
   cambiarEstadoSubproyectoAction,
   deleteSubproyectoAction,
+  deleteEventoAction,
 } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -45,9 +50,20 @@ export default async function ProyectoDetallePage({
   if (!proyecto) notFound();
 
   const canWrite = isStaff(profile.role);
-  const [subproyectos, bitacora, tramites, cobro, archivos, clientes, responsables, zonas] =
-    await Promise.all([
+  const [
+    subproyectos,
+    eventos,
+    bitacora,
+    tramites,
+    cobro,
+    archivos,
+    clientes,
+    responsables,
+    zonas,
+    tiposServicio,
+  ] = await Promise.all([
       listSubproyectos(id),
+      listEventos(id),
       listBitacora({ proyectoId: id, limit: 8 }),
       listTramites(id),
       getCobroProyecto(id),
@@ -55,6 +71,7 @@ export default async function ProyectoDetallePage({
       canWrite ? listClienteOptions() : Promise.resolve([]),
       canWrite ? listProfileOptions(["admin", "oficina", "campo"]) : Promise.resolve([]),
       canWrite ? listZonas() : Promise.resolve([]),
+      canWrite ? listTiposServicio() : Promise.resolve([]),
     ]);
 
   const estadoIdx = ESTADO_FLOW.indexOf(proyecto.estado);
@@ -96,6 +113,7 @@ export default async function ProyectoDetallePage({
             clientes={clientes}
             responsables={responsables}
             zonas={zonas}
+            tiposServicio={tiposServicio}
             proyecto={proyecto}
           />
         )}
@@ -216,6 +234,11 @@ export default async function ProyectoDetallePage({
               >
                 <div className="min-w-0">
                   <span className="text-body text-foreground">{s.nombre}</span>
+                  {s.tipo && (
+                    <span className="ml-2 rounded-sm border border-border bg-surface-sunken px-1.5 py-0.5 text-small text-muted-foreground">
+                      {SUBPROYECTO_TIPO_LABEL[s.tipo]}
+                    </span>
+                  )}
                   {s.descripcion && (
                     <span className="ml-2 text-small text-muted-foreground">{s.descripcion}</span>
                   )}
@@ -243,6 +266,44 @@ export default async function ProyectoDetallePage({
                     </span>
                   )}
                 </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      {/* Eventos e indicaciones */}
+      <Section
+        title={`Eventos e indicaciones (${eventos.length})`}
+        dataCy="proyecto-eventos"
+        action={canWrite ? <EventoDialog proyectoId={proyecto.id} /> : null}
+      >
+        {eventos.length === 0 ? (
+          <p className="text-small text-muted-foreground">Sin eventos registrados.</p>
+        ) : (
+          <ul className="-my-2 flex flex-col divide-y divide-border">
+            {eventos.map((e) => (
+              <li
+                key={e.id}
+                data-cy={`evento-row-${e.id}`}
+                className="group flex items-start justify-between gap-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="whitespace-pre-line text-body text-foreground">{e.descripcion}</p>
+                  <p className="text-small text-muted-foreground">
+                    {formatDate(e.fecha)} · {e.autor?.full_name ?? "—"}
+                  </p>
+                </div>
+                {canWrite && (
+                  <span className="shrink-0 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+                    <DeleteForm
+                      action={deleteEventoAction}
+                      id={e.id}
+                      entityLabel="este evento"
+                      dataCy={`evento-delete-${e.id}`}
+                    />
+                  </span>
+                )}
               </li>
             ))}
           </ul>

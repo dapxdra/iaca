@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import type { EstadoCobro } from "@/services/cobros.service";
+import { DateRangeFilter } from "../_components/date-range-filter";
 
 const ESTADOS_COBRO: Record<EstadoCobro, string> = {
   pendiente: "Con saldo pendiente",
@@ -19,7 +20,7 @@ const selectClass =
 const chevron =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23575d83' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")";
 
-/** Selects de estado de cobro y cliente que escriben en la URL; el listado (server) los lee. */
+/** Selects de estado de cobro y cliente y rango de último pago que escriben en la URL; el listado (server) los lee. */
 export function CobroFilters({ clientes }: { clientes: { id: string; nombre: string }[] }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -27,7 +28,9 @@ export function CobroFilters({ clientes }: { clientes: { id: string; nombre: str
 
   const estado = searchParams.get("estado") ?? "";
   const cliente = searchParams.get("cliente") ?? "";
-  const hasFilters = Boolean(estado || cliente);
+  const hasFilters = Boolean(
+    estado || cliente || searchParams.get("desde") || searchParams.get("hasta")
+  );
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams);
@@ -40,6 +43,8 @@ export function CobroFilters({ clientes }: { clientes: { id: string; nombre: str
     const params = new URLSearchParams(searchParams);
     params.delete("estado");
     params.delete("cliente");
+    params.delete("desde");
+    params.delete("hasta");
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
@@ -76,6 +81,8 @@ export function CobroFilters({ clientes }: { clientes: { id: string; nombre: str
           </option>
         ))}
       </select>
+
+      <DateRangeFilter dataCy="cobros" label="último pago" clearable={false} />
 
       {hasFilters && (
         <button

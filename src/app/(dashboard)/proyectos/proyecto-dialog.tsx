@@ -13,11 +13,13 @@ export function ProyectoDialog({
   clientes,
   responsables,
   zonas,
+  tiposServicio,
   proyecto,
 }: {
   clientes: Option[];
   responsables: { id: string; full_name: string }[];
   zonas: string[];
+  tiposServicio: string[];
   proyecto?: ProyectoDetalle;
 }) {
   const isEdit = Boolean(proyecto);
@@ -89,8 +91,14 @@ export function ProyectoDialog({
                     id="tipo_servicio"
                     name="tipo_servicio"
                     placeholder="Levantamiento, Amojonamiento…"
+                    list="tipos-servicio-existentes"
                     defaultValue={proyecto?.tipo_servicio ?? ""}
                   />
+                  <datalist id="tipos-servicio-existentes">
+                    {tiposServicio.map((t) => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
                 </Field>
                 <Field label="Responsable" htmlFor="responsable_id" error={errors.responsable_id}>
                   <Select

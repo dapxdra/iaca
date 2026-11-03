@@ -13,6 +13,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { emptyToUndefined } from "@/lib/form";
 import { TRAMITE_ESTADOS } from "@/lib/proyecto-flujo";
+import type { DateRange } from "@/lib/date-range";
 import type { Database } from "@/types/database";
 
 export type TramiteEstado = Database["public"]["Enums"]["tramite_estado"];
@@ -81,7 +82,10 @@ export const tramiteSchema = z
 
 export type TramiteInput = z.infer<typeof tramiteSchema>;
 
-export async function listTramites(proyectoId?: string): Promise<Tramite[]> {
+export async function listTramites(
+  proyectoId?: string,
+  fechaEnvio: DateRange = {}
+): Promise<Tramite[]> {
   const supabase = await createClient();
   let query = supabase
     .from("tramites_gubernamentales")
@@ -89,6 +93,8 @@ export async function listTramites(proyectoId?: string): Promise<Tramite[]> {
     .order("fecha_envio", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
   if (proyectoId) query = query.eq("proyecto_id", proyectoId);
+  if (fechaEnvio.desde) query = query.gte("fecha_envio", fechaEnvio.desde);
+  if (fechaEnvio.hasta) query = query.lte("fecha_envio", fechaEnvio.hasta);
 
   const { data, error } = await query;
   if (error) throw new Error("No se pudieron cargar los trámites.");

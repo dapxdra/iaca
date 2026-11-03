@@ -13,6 +13,7 @@
  * de vuelta con URL firmada.
  */
 import { createClient } from "@/lib/supabase/server";
+import type { DateRange } from "@/lib/date-range";
 import { BUCKETS, getSignedUrls } from "@/services/storage.service";
 
 export type BitacoraFoto = { id: string; url: string | null; descripcion: string | null };
@@ -45,6 +46,7 @@ type RawEntry = Omit<BitacoraEntry, "fotos"> & { fotos: RawFoto[] };
 export async function listBitacora(opts: {
   proyectoId?: string;
   limit?: number;
+  fecha?: DateRange;
 } = {}): Promise<BitacoraEntry[]> {
   const supabase = await createClient();
   let query = supabase
@@ -55,6 +57,8 @@ export async function listBitacora(opts: {
     .limit(opts.limit ?? 100);
 
   if (opts.proyectoId) query = query.eq("proyecto_id", opts.proyectoId);
+  if (opts.fecha?.desde) query = query.gte("fecha", opts.fecha.desde);
+  if (opts.fecha?.hasta) query = query.lte("fecha", opts.fecha.hasta);
 
   const { data, error } = await query;
   if (error) throw new Error("No se pudo cargar la bitácora.");

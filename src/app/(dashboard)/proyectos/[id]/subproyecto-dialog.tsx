@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { FormDialog } from "@/components/ui/dialog";
 import { ActionForm } from "@/components/ui/action-form";
-import { Field, Input, Textarea } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { subproyectoTramiteDefaults } from "@/config/site";
+import { SUBPROYECTO_TIPOS, SUBPROYECTO_TIPO_LABEL } from "@/lib/proyecto-flujo";
 import { createSubproyectoAction } from "../actions";
 
 export function SubproyectoDialog({ proyectoId }: { proyectoId: string }) {
@@ -40,6 +41,24 @@ export function SubproyectoDialog({ proyectoId }: { proyectoId: string }) {
               <input type="hidden" name="proyecto_id" value={proyectoId} />
               <Field label="Nombre" htmlFor="sp-nombre" required error={errors.nombre}>
                 <Input id="sp-nombre" name="nombre" required />
+              </Field>
+              <Field label="Tipo" htmlFor="sp-tipo-sub" required error={errors.tipo}>
+                <Select
+                  id="sp-tipo-sub"
+                  name="tipo"
+                  defaultValue=""
+                  required
+                  data-cy="subproyecto-tipo"
+                >
+                  <option value="" disabled>
+                    Seleccioná un tipo…
+                  </option>
+                  {SUBPROYECTO_TIPOS.map((t) => (
+                    <option key={t} value={t}>
+                      {SUBPROYECTO_TIPO_LABEL[t]}
+                    </option>
+                  ))}
+                </Select>
               </Field>
               <Field label="Descripción" htmlFor="sp-desc" error={errors.descripcion}>
                 <Textarea id="sp-desc" name="descripcion" />

@@ -3,6 +3,7 @@ import { ChevronRight, CircleDollarSign, Receipt, Wallet } from "lucide-react";
 import { dashboardPages } from "@/config/site";
 import { requireRole } from "@/lib/auth";
 import { formatColones, formatDate } from "@/lib/format";
+import { parseDateRange } from "@/lib/date-range";
 import { listCobrosProyectos, parseEstadoCobro } from "@/services/cobros.service";
 import { listClienteOptions } from "@/services/clientes.service";
 import { DashboardPageHeader } from "../_components/page-header";
@@ -18,23 +19,33 @@ export const dynamic = "force-dynamic";
 export default async function CobrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; estado?: string; cliente?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    estado?: string;
+    cliente?: string;
+    desde?: string;
+    hasta?: string;
+  }>;
 }) {
   const [params, profile] = await Promise.all([searchParams, requireRole(["admin", "oficina"])]);
   // El total cobrado (ingresos del negocio) es solo para admin. Oficina sigue
   // viendo lo pagado por proyecto porque es quien registra los pagos.
   const verTotalCobrado = profile.role === "admin";
+  const ultimoPago = parseDateRange(params);
 
   const [cobros, clientes] = await Promise.all([
     listCobrosProyectos({
       search: params.q,
       estado: parseEstadoCobro(params.estado),
       clienteId: params.cliente,
+      ultimoPago,
     }),
     listClienteOptions(),
   ]);
 
-  const hasFilters = Boolean(params.q || params.estado || params.cliente);
+  const hasFilters = Boolean(
+    params.q || params.estado || params.cliente || ultimoPago.desde || ultimoPago.hasta
+  );
   const filtroHint = hasFilters ? "Según los filtros" : undefined;
   const totalPorCobrar = cobros.reduce((s, c) => s + (c.saldo_pendiente ?? 0), 0);
   const totalPagado = verTotalCobrado ? cobros.reduce((s, c) => s + c.total_pagado, 0) : 0;

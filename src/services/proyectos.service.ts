@@ -21,11 +21,14 @@ import { emptyToUndefined } from "@/lib/form";
 import {
   ESTADO_FLOW,
   SUBPROYECTO_ESTADOS_TERMINADOS,
+  SUBPROYECTO_TIPOS,
   TRAMITE_ESTADOS_EN_CURSO,
   motivoBloqueoCierre,
   transicionesValidas,
   type ProyectoEstado,
+  type SubproyectoTipo,
 } from "@/lib/proyecto-flujo";
+import type { DateRange } from "@/lib/date-range";
 import type { Database } from "@/types/database";
 
 export { ESTADO_FLOW, transicionesValidas };
@@ -60,6 +63,7 @@ export type ProyectoFilters = {
   zona?: string;
   clienteId?: string;
   responsableId?: string;
+  fechaInicio?: DateRange;
 };
 
 const LIST_SELECT =
@@ -106,6 +110,8 @@ export async function listProyectos(filters: ProyectoFilters = {}): Promise<Proy
   if (filters.zona?.trim()) query = query.eq("zona", filters.zona.trim());
   if (filters.clienteId) query = query.eq("cliente_id", filters.clienteId);
   if (filters.responsableId) query = query.eq("responsable_id", filters.responsableId);
+  if (filters.fechaInicio?.desde) query = query.gte("fecha_inicio", filters.fechaInicio.desde);
+  if (filters.fechaInicio?.hasta) query = query.lte("fecha_inicio", filters.fechaInicio.hasta);
 
   const { data, error } = await query;
   if (error) throw new Error("No se pudo cargar la lista de proyectos.");
@@ -132,6 +138,23 @@ export async function listZonas(): Promise<string[]> {
     .not("zona", "is", null);
   if (error) throw new Error("No se pudieron cargar las zonas.");
   const unique = new Set((data ?? []).map((r) => r.zona).filter((z): z is string => !!z));
+  return [...unique].sort();
+}
+
+/**
+ * Tipos de servicio ya usados, para el autocompletado: el reporte por tipo de
+ * servicio agrupa por el texto exacto, así se evitan variantes del mismo.
+ */
+export async function listTiposServicio(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("proyectos")
+    .select("tipo_servicio")
+    .not("tipo_servicio", "is", null);
+  if (error) throw new Error("No se pudieron cargar los tipos de servicio.");
+  const unique = new Set(
+    (data ?? []).map((r) => r.tipo_servicio).filter((t): t is string => !!t)
+  );
   return [...unique].sort();
 }
 
@@ -276,6 +299,7 @@ export type Subproyecto = {
   id: string;
   proyecto_id: string;
   nombre: string;
+  tipo: SubproyectoTipo | null;
   descripcion: string | null;
   estado: ProyectoEstado;
   orden: number;
@@ -285,6 +309,7 @@ export const subproyectoSchema = z
   .object({
     proyecto_id: z.string().uuid(),
     nombre: z.string().trim().min(2, "Requerido").max(200),
+    tipo: z.enum(SUBPROYECTO_TIPOS, "Seleccioná un tipo"),
     descripcion: z.preprocess(emptyToUndefined, z.string().trim().max(1000).optional()),
     estado: z
       .enum(["contacto", "campo", "calculo", "dibujo", "entrega", "cerrado", "cancelado"])
@@ -308,7 +333,7 @@ export async function listSubproyectos(proyectoId: string): Promise<Subproyecto[
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("subproyectos")
-    .select("id, proyecto_id, nombre, descripcion, estado, orden")
+    .select("id, proyecto_id, nombre, tipo, descripcion, estado, orden")
     .eq("proyecto_id", proyectoId)
     .order("orden")
     .order("nombre");

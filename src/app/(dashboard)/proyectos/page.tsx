@@ -3,7 +3,13 @@ import { ChevronRight, FolderKanban } from "lucide-react";
 import { dashboardPages } from "@/config/site";
 import { requireRole, isStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
-import { listProyectos, listZonas, type ProyectoEstado } from "@/services/proyectos.service";
+import { parseDateRange } from "@/lib/date-range";
+import {
+  listProyectos,
+  listTiposServicio,
+  listZonas,
+  type ProyectoEstado,
+} from "@/services/proyectos.service";
 import { listClienteOptions } from "@/services/clientes.service";
 import { listProfileOptions } from "@/services/profiles.service";
 import { DashboardPageHeader } from "../_components/page-header";
@@ -19,23 +25,34 @@ export const dynamic = "force-dynamic";
 export default async function ProyectosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; estado?: string; zona?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    estado?: string;
+    zona?: string;
+    desde?: string;
+    hasta?: string;
+  }>;
 }) {
   const [params, profile] = await Promise.all([searchParams, requireRole(["admin", "oficina"])]);
   const canWrite = isStaff(profile.role);
+  const fechaInicio = parseDateRange(params);
 
-  const [proyectos, zonas, clientes, responsables] = await Promise.all([
+  const [proyectos, zonas, clientes, responsables, tiposServicio] = await Promise.all([
     listProyectos({
       search: params.q,
       estado: params.estado as ProyectoEstado | undefined,
       zona: params.zona,
+      fechaInicio,
     }),
     listZonas(),
     canWrite ? listClienteOptions() : Promise.resolve([]),
     canWrite ? listProfileOptions(["admin", "oficina", "campo"]) : Promise.resolve([]),
+    canWrite ? listTiposServicio() : Promise.resolve([]),
   ]);
 
-  const hasFilters = Boolean(params.q || params.estado || params.zona);
+  const hasFilters = Boolean(
+    params.q || params.estado || params.zona || fechaInicio.desde || fechaInicio.hasta
+  );
 
   return (
     <div data-cy="page-proyectos" className="flex animate-fade-in flex-col gap-6">
@@ -43,7 +60,12 @@ export default async function ProyectosPage({
         content={dashboardPages.proyectos}
         action={
           canWrite && clientes.length > 0 ? (
-            <ProyectoDialog clientes={clientes} responsables={responsables} zonas={zonas} />
+            <ProyectoDialog
+              clientes={clientes}
+              responsables={responsables}
+              zonas={zonas}
+              tiposServicio={tiposServicio}
+            />
           ) : null
         }
       />

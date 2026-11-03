@@ -15,6 +15,7 @@ import {
   createSubproyecto,
   deleteSubproyecto,
 } from "@/services/proyectos.service";
+import { eventoSchema, createEvento, deleteEvento } from "@/services/eventos.service";
 
 export const createProyectoAction = makeFormAction({
   schema: proyectoSchema,
@@ -63,4 +64,18 @@ export const cambiarEstadoSubproyectoAction = makeFormAction({
   handler: (data) => cambiarEstadoSubproyecto(data),
   revalidate: "/proyectos",
   successMessage: "Estado del subproyecto actualizado.",
+});
+
+export const createEventoAction = makeFormAction({
+  schema: eventoSchema,
+  handler: (data, { userId }) => createEvento(data, userId),
+  revalidate: "/proyectos",
+  successMessage: "Evento registrado.",
+});
+
+export const deleteEventoAction = makeFormAction({
+  schema: idOnlySchema,
+  handler: ({ id }) => deleteEvento(id),
+  revalidate: "/proyectos",
+  successMessage: "Evento eliminado.",
 });

@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { KpiZona } from "@/services/kpi.service";
+import type { KpiTipoServicio, KpiZona } from "@/services/kpi.service";
 
 // Recharts necesita valores concretos, no variables CSS. Se mantienen
 // alineados con globals.css (navy / índigo-acento / verde).
@@ -55,6 +55,32 @@ export function ProyectosPorZonaChart({ zonas }: { zonas: KpiZona[] }) {
         <BarChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }} barGap={4}>
           <CartesianGrid strokeDasharray="3 3" stroke={SLATE} strokeOpacity={0.15} vertical={false} />
           <XAxis dataKey="zona" tick={axisTick} tickLine={false} axisLine={{ stroke: `${SLATE}33` }} />
+          <YAxis allowDecimals={false} tick={axisTick} width={28} tickLine={false} axisLine={false} />
+          <Tooltip cursor={{ fill: `${SLATE}12` }} contentStyle={tooltipStyle} />
+          <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} iconType="circle" iconSize={8} />
+          <Bar dataKey="Activos" fill={ACCENT} radius={[3, 3, 0, 0]} maxBarSize={44} />
+          <Bar dataKey="Cerrados" fill={GREEN} radius={[3, 3, 0, 0]} maxBarSize={44} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export function ProyectosPorServicioChart({ tipos }: { tipos: KpiTipoServicio[] }) {
+  const data = tipos.map((t) => ({
+    servicio: t.tipo_servicio ?? "Sin tipo",
+    Activos: t.proyectos_activos,
+    Cerrados: t.proyectos_cerrados,
+  }));
+
+  if (data.length === 0) return <EmptyChart>Sin datos para graficar.</EmptyChart>;
+
+  return (
+    <div className="h-72 w-full" data-cy="kpi-chart-servicio">
+      <ResponsiveContainer>
+        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }} barGap={4}>
+          <CartesianGrid strokeDasharray="3 3" stroke={SLATE} strokeOpacity={0.15} vertical={false} />
+          <XAxis dataKey="servicio" tick={axisTick} tickLine={false} axisLine={{ stroke: `${SLATE}33` }} />
           <YAxis allowDecimals={false} tick={axisTick} width={28} tickLine={false} axisLine={false} />
           <Tooltip cursor={{ fill: `${SLATE}12` }} contentStyle={tooltipStyle} />
           <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} iconType="circle" iconSize={8} />

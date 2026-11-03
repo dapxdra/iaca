@@ -3,13 +3,18 @@ import { CalendarCheck, CheckCircle2, FolderKanban, Layers } from "lucide-react"
 import { dashboardPages } from "@/config/site";
 import { requireRole } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
-import { getKpiProyectos, getKpiZonas, resumirKpi } from "@/services/kpi.service";
+import {
+  getKpiProyectos,
+  getKpiTiposServicio,
+  getKpiZonas,
+  resumirKpi,
+} from "@/services/kpi.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { Section } from "@/components/ui/section";
 import { StatCard } from "@/components/ui/stat-card";
 import { TableWrap, Th, Td, EmptyRow } from "@/components/ui/table";
 import { EstadoProyectoBadge } from "@/components/ui/badge";
-import { ProyectosPorZonaChart, CicloPorZonaChart } from "./kpi-charts";
+import { ProyectosPorZonaChart, CicloPorZonaChart, ProyectosPorServicioChart } from "./kpi-charts";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +31,11 @@ function EntregaTag({ v }: { v: boolean | null }) {
 
 export default async function KpiPage() {
   await requireRole(["admin", "oficina"]);
-  const [proyectos, zonas] = await Promise.all([getKpiProyectos(), getKpiZonas()]);
+  const [proyectos, zonas, tiposServicio] = await Promise.all([
+    getKpiProyectos(),
+    getKpiZonas(),
+    getKpiTiposServicio(),
+  ]);
   const resumen = resumirKpi(proyectos);
 
   return (
@@ -90,6 +99,49 @@ export default async function KpiPage() {
           </tbody>
         </TableWrap>
       </Section>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Section title="Proyectos por tipo de servicio" dataCy="kpi-servicio">
+          <ProyectosPorServicioChart tipos={tiposServicio} />
+        </Section>
+        <Section title="Detalle por tipo de servicio" dataCy="kpi-tabla-servicio">
+          <TableWrap>
+            <thead>
+              <tr>
+                <Th>Tipo de servicio</Th>
+                <Th numeric>Proyectos</Th>
+                <Th numeric>Activos</Th>
+                <Th numeric>A tiempo</Th>
+                <Th numeric>Ciclo prom. (días)</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {tiposServicio.length === 0 ? (
+                <EmptyRow colSpan={5}>Sin datos.</EmptyRow>
+              ) : (
+                tiposServicio.map((t) => {
+                  const conEntrega = t.entregados_a_tiempo + t.entregados_tarde;
+                  return (
+                    <tr key={t.tipo_servicio ?? "sin-tipo"}>
+                      <Td className="text-foreground">{t.tipo_servicio ?? "Sin tipo"}</Td>
+                      <Td numeric>{t.total_proyectos}</Td>
+                      <Td numeric>{t.proyectos_activos}</Td>
+                      <Td numeric>
+                        {conEntrega === 0
+                          ? "—"
+                          : `${Math.round((t.entregados_a_tiempo / conEntrega) * 100)}%`}
+                      </Td>
+                      <Td numeric>
+                        {t.promedio_dias_ciclo === null ? "—" : Math.round(t.promedio_dias_ciclo)}
+                      </Td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </TableWrap>
+        </Section>
+      </div>
 
       <Section title="Detalle por proyecto" dataCy="kpi-tabla-proyecto">
         <TableWrap>

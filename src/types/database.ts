@@ -509,6 +509,48 @@ export type Database = {
           },
         ]
       }
+      proyecto_eventos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descripcion: string
+          fecha: string
+          id: string
+          proyecto_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descripcion: string
+          fecha?: string
+          id?: string
+          proyecto_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descripcion?: string
+          fecha?: string
+          id?: string
+          proyecto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proyecto_eventos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proyecto_eventos_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "proyectos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proyectos: {
         Row: {
           canton: string | null
@@ -714,6 +756,7 @@ export type Database = {
           nombre: string
           orden: number
           proyecto_id: string
+          tipo: Database["public"]["Enums"]["subproyecto_tipo"] | null
           updated_at: string
         }
         Insert: {
@@ -724,6 +767,7 @@ export type Database = {
           nombre: string
           orden?: number
           proyecto_id: string
+          tipo?: Database["public"]["Enums"]["subproyecto_tipo"] | null
           updated_at?: string
         }
         Update: {
@@ -734,6 +778,7 @@ export type Database = {
           nombre?: string
           orden?: number
           proyecto_id?: string
+          tipo?: Database["public"]["Enums"]["subproyecto_tipo"] | null
           updated_at?: string
         }
         Relationships: [
@@ -954,6 +999,18 @@ export type Database = {
           total_puntos?: never
           total_subproyectos?: never
           zona?: string | null
+        }
+        Relationships: []
+      }
+      vw_kpi_tipo_servicio: {
+        Row: {
+          entregados_a_tiempo: number | null
+          entregados_tarde: number | null
+          promedio_dias_ciclo: number | null
+          proyectos_activos: number | null
+          proyectos_cerrados: number | null
+          tipo_servicio: string | null
+          total_proyectos: number | null
         }
         Relationships: []
       }
@@ -1976,6 +2033,7 @@ export type Database = {
         | "cerrado"
         | "cancelado"
       punto_fuente: "mapit_csv" | "gps" | "manual" | "postgresql_import"
+      subproyecto_tipo: "plano_catastrado" | "consultoria" | "alineamiento"
       tramite_estado:
         | "pendiente"
         | "sellado_cfia"
@@ -2141,6 +2199,7 @@ export const Constants = {
         "cancelado",
       ],
       punto_fuente: ["mapit_csv", "gps", "manual", "postgresql_import"],
+      subproyecto_tipo: ["plano_catastrado", "consultoria", "alineamiento"],
       tramite_estado: [
         "pendiente",
         "sellado_cfia",

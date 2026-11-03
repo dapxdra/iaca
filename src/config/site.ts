@@ -195,7 +195,7 @@ export const dashboardPages: Record<string, DashboardPageContent> = {
   kpi: {
     title: "Reportes KPI",
     description:
-      "Indicadores por proyecto, zona y trabajador (tiempos de ciclo, proyectos a tiempo, volumen por zona).",
+      "Indicadores por proyecto, zona, tipo de servicio y trabajador (tiempos de ciclo, proyectos a tiempo, volumen por zona y por servicio).",
     docsRef: "docs/REQUIREMENTS.md sección 4.6",
   },
   notificaciones: {
