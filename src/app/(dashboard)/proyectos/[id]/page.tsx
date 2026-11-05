@@ -17,18 +17,25 @@ import { listTramites } from "@/services/tramites.service";
 import { listEventos } from "@/services/eventos.service";
 import {
   SUBPROYECTO_ESTADOS_TERMINADOS,
-  SUBPROYECTO_TIPO_LABEL,
+  SUBPROYECTO_ESTADO_SECUNDARIO_LABEL,
+  TRAMITE_TIPO_LABEL,
   esTramiteEnCurso,
-  motivoBloqueoCierre,
+  motivoBloqueo,
 } from "@/lib/proyecto-flujo";
 import { getCobroProyecto } from "@/services/cobros.service";
 import { listArchivosProyecto } from "@/services/archivos.service";
 import { Section, DataItem } from "@/components/ui/section";
 import { TableWrap, Th, Td } from "@/components/ui/table";
-import { EstadoProyectoBadge, EstadoTramiteBadge, PROYECTO_LABEL } from "@/components/ui/badge";
+import {
+  EstadoProyectoBadge,
+  EstadoSubproyectoBadge,
+  EstadoTramiteBadge,
+  PROYECTO_LABEL,
+} from "@/components/ui/badge";
 import { DeleteForm } from "@/components/ui/delete-form";
 import { ProyectoDialog } from "../proyecto-dialog";
 import { EstadoControl } from "./estado-control";
+import { EstadosSecundariosControl } from "./estados-secundarios-control";
 import { SubproyectoDialog } from "./subproyecto-dialog";
 import { EventoDialog } from "./evento-dialog";
 import {
@@ -79,14 +86,22 @@ export default async function ProyectoDetallePage({
   const cerrado = proyecto.estado === "cerrado";
 
   const tramitesEnCurso = tramites.filter((t) => esTramiteEnCurso(t.estado));
-  const bloqueoCierreProyecto = motivoBloqueoCierre({
+  const pendientesProyecto = {
     tramitesEnCurso: tramitesEnCurso.length,
     subproyectosAbiertos: subproyectos.filter(
       (s) => !SUBPROYECTO_ESTADOS_TERMINADOS.includes(s.estado)
     ).length,
-  });
+  };
+  // Georeferencia espera a que terminen los subproyectos y trámites.
+  const bloqueosProyecto = {
+    cerrado: motivoBloqueo(pendientesProyecto),
+    dibujo:
+      proyecto.estado === "georeferencia"
+        ? motivoBloqueo({ ...pendientesProyecto, accion: "pasar a Dibujo" })
+        : null,
+  };
   const bloqueoCierreSub = (subproyectoId: string) =>
-    motivoBloqueoCierre({
+    motivoBloqueo({
       tramitesEnCurso: tramitesEnCurso.filter((t) => t.subproyecto_id === subproyectoId).length,
     });
 
@@ -169,9 +184,10 @@ export default async function ProyectoDetallePage({
             <EstadoControl
               action={cambiarEstadoAction}
               id={proyecto.id}
+              flujo="proyecto"
               estadoActual={proyecto.estado}
               pideFechaEntrega={!proyecto.fecha_entrega_real}
-              bloqueoCierre={bloqueoCierreProyecto}
+              bloqueos={bloqueosProyecto}
             />
           </div>
         )}
@@ -232,25 +248,46 @@ export default async function ProyectoDetallePage({
                 data-cy={`subproyecto-row-${s.id}`}
                 className="group flex flex-wrap items-center justify-between gap-3 py-2.5"
               >
-                <div className="min-w-0">
-                  <span className="text-body text-foreground">{s.nombre}</span>
-                  {s.tipo && (
-                    <span className="ml-2 rounded-sm border border-border bg-surface-sunken px-1.5 py-0.5 text-small text-muted-foreground">
-                      {SUBPROYECTO_TIPO_LABEL[s.tipo]}
-                    </span>
-                  )}
-                  {s.descripcion && (
-                    <span className="ml-2 text-small text-muted-foreground">{s.descripcion}</span>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <div>
+                    <span className="text-body text-foreground">{s.nombre}</span>
+                    {s.correcciones > 0 && (
+                      <span
+                        className="ml-2 rounded-sm border border-warning/30 bg-warning/8 px-1.5 py-0.5 text-small text-foreground"
+                        data-cy={`subproyecto-correcciones-${s.id}`}
+                      >
+                        {s.correcciones === 1 ? "1 corrección" : `${s.correcciones} correcciones`}
+                      </span>
+                    )}
+                    {s.descripcion && (
+                      <span className="ml-2 text-small text-muted-foreground">{s.descripcion}</span>
+                    )}
+                  </div>
+                  {canWrite ? (
+                    <EstadosSecundariosControl
+                      id={s.id}
+                      activos={s.estados_secundarios}
+                      dataCy={`subproyecto-secundarios-${s.id}`}
+                    />
+                  ) : (
+                    s.estados_secundarios.length > 0 && (
+                      <span className="text-small text-muted-foreground">
+                        {s.estados_secundarios
+                          .map((e) => SUBPROYECTO_ESTADO_SECUNDARIO_LABEL[e])
+                          .join(" · ")}
+                      </span>
+                    )
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <EstadoProyectoBadge estado={s.estado} />
+                  <EstadoSubproyectoBadge estado={s.estado} />
                   {canWrite && (
                     <EstadoControl
                       action={cambiarEstadoSubproyectoAction}
                       id={s.id}
+                      flujo="subproyecto"
                       estadoActual={s.estado}
-                      bloqueoCierre={bloqueoCierreSub(s.id)}
+                      bloqueos={{ cerrado: bloqueoCierreSub(s.id) }}
                       compact
                       dataCy={`subproyecto-estado-${s.id}`}
                     />
@@ -341,7 +378,7 @@ export default async function ProyectoDetallePage({
               {tramites.map((t) => (
                 <tr key={t.id}>
                   <Td className="text-foreground">{t.entidad}</Td>
-                  <Td className="text-muted-foreground">{t.tipo_tramite}</Td>
+                  <Td className="text-muted-foreground">{TRAMITE_TIPO_LABEL[t.tipo_tramite]}</Td>
                   {subproyectos.length > 0 && (
                     <Td className="text-muted-foreground">{t.subproyecto?.nombre ?? "—"}</Td>
                   )}

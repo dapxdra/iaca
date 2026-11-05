@@ -6,8 +6,18 @@ import { Field, Input } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { idleFormState, type FormState } from "@/lib/form";
 import { TRAMITE_LABEL } from "@/components/ui/badge";
-import { TRAMITE_ESTADOS_EN_CURSO, umbralCampo } from "@/lib/proyecto-flujo";
-import type { AlertasConfig, UmbralesTramite } from "@/services/notificaciones.service";
+import {
+  ALERTA_ESTADO_CLAVES,
+  ALERTA_ESTADO_LABEL,
+  TRAMITE_ESTADOS_EN_CURSO,
+  duracionCampo,
+  umbralCampo,
+} from "@/lib/proyecto-flujo";
+import type {
+  AlertasConfig,
+  DuracionesEstado,
+  UmbralesTramite,
+} from "@/services/notificaciones.service";
 import { updateAlertasConfigAction } from "./actions";
 
 type Action = (prev: FormState, formData: FormData) => Promise<FormState>;
@@ -58,9 +68,11 @@ export function ActionButton({
 export function AlertasConfigForm({
   config,
   umbrales,
+  duraciones,
 }: {
   config: AlertasConfig;
   umbrales: UmbralesTramite;
+  duraciones: DuracionesEstado;
 }) {
   const [state, formAction, pending] = useActionState(updateAlertasConfigAction, idleFormState);
   useActionToast(state, "Configuración guardada");
@@ -93,7 +105,7 @@ export function AlertasConfigForm({
       <Field
         label="Proyecto sin movimiento"
         htmlFor="proyecto_dias"
-        hint="Días sin cambio de estado ni bitácora"
+        hint="Días sin cambio de estado ni bitácora (salvo los estados de abajo)"
         error={errs.proyecto_dias}
         required
       >
@@ -125,6 +137,27 @@ export function AlertasConfigForm({
               required
             >
               {diasInput(campo, umbrales[estado], 365)}
+            </Field>
+          );
+        })}
+      </fieldset>
+
+      <fieldset className="grid gap-4 border-t border-border pt-4 sm:col-span-3 sm:grid-cols-5 sm:items-start">
+        <legend className="pt-4 text-small font-semibold text-foreground">
+          Duración esperada por estado
+        </legend>
+        {ALERTA_ESTADO_CLAVES.map((clave) => {
+          const campo = duracionCampo(clave);
+          return (
+            <Field
+              key={clave}
+              label={ALERTA_ESTADO_LABEL[clave]}
+              htmlFor={campo}
+              hint="Días en el estado"
+              error={errs[campo]}
+              required
+            >
+              {diasInput(campo, duraciones[clave], 365)}
             </Field>
           );
         })}

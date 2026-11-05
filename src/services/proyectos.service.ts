@@ -4,14 +4,16 @@
  * Reglas de negocio que viven acá (no en la UI):
  *  - El código `IACA-<año>-<NNN>` se genera solo al crear; nunca lo digita el
  *    usuario. Se calcula a partir del último código del año en curso.
- *  - El flujo de estados es Contacto → Campo → Cálculo → Dibujo → Entrega, y
- *    desde Entrega se puede Cerrar o Cancelar (también se puede Cancelar desde
- *    cualquier estado). `cambiarEstado` valida la transición.
+ *  - Los flujos de proyecto y subproyecto están en `lib/proyecto-flujo.ts`;
+ *    `cambiarEstado` y `cambiarEstadoSubproyecto` validan la transición.
  *  - Al pasar a "entrega" sin fecha de entrega real, se deja como está (la
  *    fecha real se registra aparte); al "cerrar" se exige fecha de entrega real.
- *  - No se cierra un proyecto con trámites en curso ni con subproyectos sin
- *    cerrar, ni un subproyecto con trámites en curso propios. Los triggers de
- *    0008_... lo garantizan en la base; acá se valida antes para dar un mensaje claro.
+ *  - No se cierra un proyecto, ni pasa de Georeferencia a Dibujo, con trámites
+ *    en curso o subproyectos sin cerrar; no se cierra un subproyecto con
+ *    trámites en curso propios. Los triggers de 0008_.../0013_... lo
+ *    garantizan en la base; acá se valida antes para dar un mensaje claro.
+ *  - Cada retroceso de un subproyecto (ej. Minutas → Carga APT) suma una
+ *    corrección; lo cuenta un trigger de 0013_...
  *
  * Autorización: RLS (0004_...). Escritura solo admin/oficina.
  */
@@ -20,13 +22,16 @@ import { createClient } from "@/lib/supabase/server";
 import { emptyToUndefined } from "@/lib/form";
 import {
   ESTADO_FLOW,
+  SUBPROYECTO_ESTADOS_SECUNDARIOS,
   SUBPROYECTO_ESTADOS_TERMINADOS,
-  SUBPROYECTO_TIPOS,
   TRAMITE_ESTADOS_EN_CURSO,
-  motivoBloqueoCierre,
+  TRAMITE_TIPOS,
+  motivoBloqueo,
+  transicionesSubproyecto,
   transicionesValidas,
   type ProyectoEstado,
-  type SubproyectoTipo,
+  type SubproyectoEstado,
+  type SubproyectoEstadoSecundario,
 } from "@/lib/proyecto-flujo";
 import type { DateRange } from "@/lib/date-range";
 import type { Database } from "@/types/database";
@@ -200,8 +205,9 @@ export const cambiarEstadoSchema = z.object({
   id: z.string().uuid(),
   estado: z.enum([
     "contacto",
-    "campo",
+    "cotizacion_agenda",
     "calculo",
+    "georeferencia",
     "dibujo",
     "entrega",
     "cerrado",
@@ -232,8 +238,12 @@ export async function cambiarEstado(
     const fecha = fecha_entrega_real ?? actual.fecha_entrega_real;
     if (!fecha) throw new Error("Para cerrar el proyecto registrá la fecha de entrega real.");
     patch.fecha_entrega_real = fecha;
-
-    const motivo = motivoBloqueoCierre(await getPendientesCierre(supabase, { proyectoId: id }));
+  }
+  if (estado === "cerrado" || (actual.estado === "georeferencia" && estado === "dibujo")) {
+    const motivo = motivoBloqueo({
+      accion: estado === "cerrado" ? "cerrar" : "pasar a Dibujo",
+      ...(await getPendientesCierre(supabase, { proyectoId: id })),
+    });
     if (motivo) throw new Error(motivo);
   }
 
@@ -299,33 +309,32 @@ export type Subproyecto = {
   id: string;
   proyecto_id: string;
   nombre: string;
-  tipo: SubproyectoTipo | null;
   descripcion: string | null;
-  estado: ProyectoEstado;
+  estado: SubproyectoEstado;
+  estados_secundarios: SubproyectoEstadoSecundario[];
+  correcciones: number;
   orden: number;
 };
+
+const checkbox = z.preprocess((v) => v === "on" || v === "true", z.boolean());
 
 export const subproyectoSchema = z
   .object({
     proyecto_id: z.string().uuid(),
     nombre: z.string().trim().min(2, "Requerido").max(200),
-    tipo: z.enum(SUBPROYECTO_TIPOS, "Seleccioná un tipo"),
     descripcion: z.preprocess(emptyToUndefined, z.string().trim().max(1000).optional()),
-    estado: z
-      .enum(["contacto", "campo", "calculo", "dibujo", "entrega", "cerrado", "cancelado"])
-      .default("contacto"),
     // Si se marca, el trámite se crea junto con el subproyecto, en estado pendiente.
-    necesita_tramite: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
+    necesita_tramite: checkbox,
     entidad: z.preprocess(emptyToUndefined, z.string().trim().max(200).optional()),
-    tipo_tramite: z.preprocess(emptyToUndefined, z.string().trim().max(200).optional()),
+    tipo_tramite: z.preprocess(emptyToUndefined, z.enum(TRAMITE_TIPOS).optional()),
   })
   .superRefine((v, ctx) => {
     if (!v.necesita_tramite) return;
     if (!v.entidad || v.entidad.length < 2) {
       ctx.addIssue({ code: "custom", path: ["entidad"], message: "Requerido" });
     }
-    if (!v.tipo_tramite || v.tipo_tramite.length < 2) {
-      ctx.addIssue({ code: "custom", path: ["tipo_tramite"], message: "Requerido" });
+    if (!v.tipo_tramite) {
+      ctx.addIssue({ code: "custom", path: ["tipo_tramite"], message: "Seleccioná un tipo" });
     }
   });
 
@@ -333,7 +342,7 @@ export async function listSubproyectos(proyectoId: string): Promise<Subproyecto[
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("subproyectos")
-    .select("id, proyecto_id, nombre, tipo, descripcion, estado, orden")
+    .select("id, proyecto_id, nombre, descripcion, estado, estados_secundarios, correcciones, orden")
     .eq("proyecto_id", proyectoId)
     .order("orden")
     .order("nombre");
@@ -385,7 +394,7 @@ export async function listSubproyectoOptions(): Promise<
 
 export const cambiarEstadoSubproyectoSchema = z.object({
   id: z.string().uuid(),
-  estado: cambiarEstadoSchema.shape.estado,
+  estado: z.enum(["tramite", "carga_apt", "minutas", "preparacion", "cerrado", "cancelado"]),
 });
 
 export async function cambiarEstadoSubproyecto(
@@ -401,17 +410,42 @@ export async function cambiarEstadoSubproyecto(
     .single();
   if (readErr || !actual) throw new Error("No se pudo leer el estado actual del subproyecto.");
 
-  if (!transicionesValidas(actual.estado).includes(estado)) {
+  if (!transicionesSubproyecto(actual.estado).includes(estado)) {
     throw new Error(`Transición no permitida: ${actual.estado} → ${estado}.`);
   }
 
   if (estado === "cerrado") {
-    const motivo = motivoBloqueoCierre(await getPendientesCierre(supabase, { subproyectoId: id }));
+    const motivo = motivoBloqueo(await getPendientesCierre(supabase, { subproyectoId: id }));
     if (motivo) throw new Error(motivo);
   }
 
   const { error } = await supabase.from("subproyectos").update({ estado }).eq("id", id);
   if (error) throw new Error("No se pudo cambiar el estado del subproyecto.");
+}
+
+/** Un checkbox por estado de segundo plano; se guardan como lista. */
+export const estadosSecundariosSchema = z
+  .object({
+    id: z.string().uuid(),
+    mantenimiento: checkbox,
+    apelacion: checkbox,
+    visado: checkbox,
+  })
+  .transform(({ id, ...marcas }) => ({
+    id,
+    estados_secundarios: SUBPROYECTO_ESTADOS_SECUNDARIOS.filter((e) => marcas[e]),
+  }));
+
+export async function actualizarEstadosSecundarios({
+  id,
+  estados_secundarios,
+}: z.infer<typeof estadosSecundariosSchema>): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("subproyectos")
+    .update({ estados_secundarios })
+    .eq("id", id);
+  if (error) throw new Error("No se pudieron actualizar los estados de segundo plano.");
 }
 
 export async function deleteSubproyecto(id: string): Promise<void> {

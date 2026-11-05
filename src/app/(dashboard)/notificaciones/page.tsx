@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { BellOff, FileStack, FolderKanban } from "lucide-react";
+import { BellOff, FileStack, FolderKanban, Layers } from "lucide-react";
 import { alertasContent, dashboardPages } from "@/config/site";
 import { requireRole } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import {
   getAlertasConfig,
+  getDuracionesEstado,
   getUmbralesTramite,
   listNotificaciones,
 } from "@/services/notificaciones.service";
@@ -25,6 +26,12 @@ const FILTROS = [
   { key: "todas", label: "Todas" },
 ] as const;
 
+const ICONO_TIPO = {
+  proyecto_sin_movimiento: FolderKanban,
+  tramite_sin_movimiento: FileStack,
+  subproyecto_demorado: Layers,
+} as const;
+
 export default async function NotificacionesPage({
   searchParams,
 }: {
@@ -37,10 +44,11 @@ export default async function NotificacionesPage({
   const soloNoLeidas = ver !== "todas";
   const esAdmin = profile.role === "admin";
 
-  const [notificaciones, config, umbrales] = await Promise.all([
+  const [notificaciones, config, umbrales, duraciones] = await Promise.all([
     listNotificaciones(soloNoLeidas),
     esAdmin ? getAlertasConfig() : Promise.resolve(null),
     esAdmin ? getUmbralesTramite() : Promise.resolve(null),
+    esAdmin ? getDuracionesEstado() : Promise.resolve(null),
   ]);
   const hayNoLeidas = notificaciones.some((n) => !n.leida_at);
 
@@ -107,7 +115,7 @@ export default async function NotificacionesPage({
         ) : (
           <ul className="flex flex-col divide-y divide-border">
             {notificaciones.map((n) => {
-              const Icon = n.tipo === "tramite_sin_movimiento" ? FileStack : FolderKanban;
+              const Icon = ICONO_TIPO[n.tipo];
               const leida = Boolean(n.leida_at);
               return (
                 <li
@@ -183,7 +191,9 @@ export default async function NotificacionesPage({
           <p className="mb-4 text-small text-muted-foreground">
             {alertasContent.configDescripcion}
           </p>
-          {umbrales && <AlertasConfigForm config={config} umbrales={umbrales} />}
+          {umbrales && duraciones && (
+            <AlertasConfigForm config={config} umbrales={umbrales} duraciones={duraciones} />
+          )}
         </Section>
       )}
     </div>

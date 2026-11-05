@@ -6,7 +6,7 @@ import { FormDialog } from "@/components/ui/dialog";
 import { ActionForm } from "@/components/ui/action-form";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { subproyectoTramiteDefaults } from "@/config/site";
-import { SUBPROYECTO_TIPOS, SUBPROYECTO_TIPO_LABEL } from "@/lib/proyecto-flujo";
+import { TRAMITE_TIPOS, TRAMITE_TIPO_LABEL } from "@/lib/proyecto-flujo";
 import { createSubproyectoAction } from "../actions";
 
 export function SubproyectoDialog({ proyectoId }: { proyectoId: string }) {
@@ -42,24 +42,6 @@ export function SubproyectoDialog({ proyectoId }: { proyectoId: string }) {
               <Field label="Nombre" htmlFor="sp-nombre" required error={errors.nombre}>
                 <Input id="sp-nombre" name="nombre" required />
               </Field>
-              <Field label="Tipo" htmlFor="sp-tipo-sub" required error={errors.tipo}>
-                <Select
-                  id="sp-tipo-sub"
-                  name="tipo"
-                  defaultValue=""
-                  required
-                  data-cy="subproyecto-tipo"
-                >
-                  <option value="" disabled>
-                    Seleccioná un tipo…
-                  </option>
-                  {SUBPROYECTO_TIPOS.map((t) => (
-                    <option key={t} value={t}>
-                      {SUBPROYECTO_TIPO_LABEL[t]}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
               <Field label="Descripción" htmlFor="sp-desc" error={errors.descripcion}>
                 <Textarea id="sp-desc" name="descripcion" />
               </Field>
@@ -93,13 +75,19 @@ export function SubproyectoDialog({ proyectoId }: { proyectoId: string }) {
                     required
                     error={errors.tipo_tramite}
                   >
-                    <Input
+                    <Select
                       id="sp-tipo"
                       name="tipo_tramite"
                       defaultValue={subproyectoTramiteDefaults.tipoTramite}
                       required
                       data-cy="subproyecto-tramite-tipo"
-                    />
+                    >
+                      {TRAMITE_TIPOS.map((t) => (
+                        <option key={t} value={t}>
+                          {TRAMITE_TIPO_LABEL[t]}
+                        </option>
+                      ))}
+                    </Select>
                   </Field>
                   <p className="text-small text-muted-foreground sm:col-span-2">
                     {subproyectoTramiteDefaults.hint}

@@ -10,8 +10,11 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import {
+  ALERTA_ESTADO_CLAVES,
   TRAMITE_ESTADOS_EN_CURSO,
+  duracionCampo,
   umbralCampo,
+  type AlertaEstadoClave,
   type TramiteEstadoEnCurso,
 } from "@/lib/proyecto-flujo";
 import type { Database } from "@/types/database";
@@ -46,6 +49,18 @@ export const ALERTAS_CONFIG_DEFAULT: AlertasConfig = {
 export type UmbralesTramite = Record<TramiteEstadoEnCurso, number>;
 
 const UMBRAL_TRAMITE_DEFAULT = 30;
+
+/** Duración esperada (días) de cada estado con alerta propia. */
+export type DuracionesEstado = Record<AlertaEstadoClave, number>;
+
+/** Valores de 0014_..., por si una fila no se puede leer. */
+const DURACION_ESTADO_DEFAULT: DuracionesEstado = {
+  preparacion: 7,
+  visado: 15,
+  apt_minutas: 10,
+  mantenimiento: 15,
+  dibujo: 7,
+};
 
 const LIMITE_LISTA = 100;
 
@@ -114,7 +129,15 @@ export const alertasConfigSchema = z.object({
   umbral_sellado_cfia: dias(365),
   umbral_calificacion_rn: dias(365),
   umbral_publico_defectuoso: dias(365),
-}) satisfies z.ZodType<Record<ReturnType<typeof umbralCampo>, number>>;
+  // Un campo por estado con duración esperada; los nombres salen de `duracionCampo`.
+  duracion_preparacion: dias(365),
+  duracion_visado: dias(365),
+  duracion_apt_minutas: dias(365),
+  duracion_mantenimiento: dias(365),
+  duracion_dibujo: dias(365),
+}) satisfies z.ZodType<
+  Record<ReturnType<typeof umbralCampo> | ReturnType<typeof duracionCampo>, number>
+>;
 
 export async function getAlertasConfig(): Promise<AlertasConfig> {
   const supabase = await createClient();
@@ -136,6 +159,16 @@ export async function getUmbralesTramite(): Promise<UmbralesTramite> {
   ) as UmbralesTramite;
 }
 
+export async function getDuracionesEstado(): Promise<DuracionesEstado> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("alertas_estado_umbral").select("clave, dias");
+  if (error) throw new Error("No se pudieron cargar las duraciones por estado.");
+  const porClave = new Map((data ?? []).map((r) => [r.clave, r.dias]));
+  return Object.fromEntries(
+    ALERTA_ESTADO_CLAVES.map((c) => [c, porClave.get(c) ?? DURACION_ESTADO_DEFAULT[c]])
+  ) as DuracionesEstado;
+}
+
 export async function updateAlertasConfig(
   input: z.infer<typeof alertasConfigSchema>
 ): Promise<void> {
@@ -155,15 +188,21 @@ export async function updateAlertasConfig(
   if (!rows?.length) throw new Error("Solo un administrador puede cambiar la configuración.");
 
   // Una fila fija por estado: update, no upsert (no hay política de insert).
-  const resultados = await Promise.all(
-    TRAMITE_ESTADOS_EN_CURSO.map((estado) =>
+  const resultados = await Promise.all([
+    ...TRAMITE_ESTADOS_EN_CURSO.map((estado) =>
       supabase
         .from("alertas_tramite_umbral")
         .update({ dias: data[umbralCampo(estado)] })
         .eq("estado", estado)
-    )
-  );
+    ),
+    ...ALERTA_ESTADO_CLAVES.map((clave) =>
+      supabase
+        .from("alertas_estado_umbral")
+        .update({ dias: data[duracionCampo(clave)] })
+        .eq("clave", clave)
+    ),
+  ]);
   if (resultados.some((r) => r.error)) {
-    throw new Error("No se pudieron guardar los umbrales de trámites.");
+    throw new Error("No se pudieron guardar los umbrales.");
   }
 }

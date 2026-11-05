@@ -11,6 +11,7 @@ import { DateRangeFilter } from "../_components/date-range-filter";
 import { TableWrap, Th, Td } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EstadoTramiteBadge } from "@/components/ui/badge";
+import { TRAMITE_TIPO_LABEL } from "@/lib/proyecto-flujo";
 import { DeleteForm } from "@/components/ui/delete-form";
 import { TramiteDialog } from "./tramite-dialog";
 import { deleteTramiteAction } from "./actions";
@@ -129,7 +130,7 @@ export default async function TramitesPage({
                     </span>
                     <span className="text-muted-foreground">
                       {" "}
-                      · {a.entidad} · {a.tipo_tramite}
+                      · {a.entidad} · {TRAMITE_TIPO_LABEL[a.tipo_tramite]}
                     </span>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
@@ -214,7 +215,7 @@ export default async function TramitesPage({
                   )}
                 </Td>
                 <Td className="text-foreground">{t.entidad}</Td>
-                <Td className="text-muted-foreground">{t.tipo_tramite}</Td>
+                <Td className="text-muted-foreground">{TRAMITE_TIPO_LABEL[t.tipo_tramite]}</Td>
                 <Td className="tabular-nums">{t.numero_expediente ?? "—"}</Td>
                 <Td className="whitespace-nowrap text-muted-foreground">
                   {formatDate(t.fecha_envio)}

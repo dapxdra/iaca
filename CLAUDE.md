@@ -194,7 +194,7 @@ claro, y así está declarado en la política de privacidad.
 Los envíos sospechosos se guardan marcados como `spam` en vez de descartarse: si el filtro
 se equivoca, la solicitud legítima sigue recuperable en la bandeja.
 
-## Notificaciones de proyectos y trámites sin movimiento
+## Notificaciones de proyectos, subproyectos y trámites demorados
 
 Vercel Cron ([vercel.json](./vercel.json), 13:00 UTC = 7:00 en Costa Rica) →
 [/api/cron/alertas](./src/app/api/cron/alertas/route.ts) →
@@ -207,9 +207,17 @@ Vercel Cron ([vercel.json](./vercel.json), 13:00 UTC = 7:00 en Costa Rica) →
   trámite, desde lo último entre envío, revisión y cambio de estado. No usar `updated_at`:
   cambia con cualquier edición.
 - **Umbrales**: el de proyectos en `alertas_config` (fila única); los de trámites, uno
-  por estado en curso en `alertas_tramite_umbral` (0010_...). Los edita solo admin. La
+  por estado en curso en `alertas_tramite_umbral` (0010_...); la duración esperada de
+  Preparación, Visado, Carga APT y Minutas, Mantenimiento y Dibujo en
+  `alertas_estado_umbral` (0014_..., clave de texto: `ALERTA_ESTADO_CLAVES` en
+  `proyecto-flujo.ts`). Dibujo pisa el umbral general de proyectos. Los edita solo admin. La
   vista expone `supera_umbral` y el panel de `/tramites` filtra por eso por defecto, para
   que muestre lo mismo que se avisa.
+- **Subproyectos** (`vw_subproyectos_demorados`, 0014_...): días desde
+  `subproyectos.estado_cambiado_at` para el estado principal y desde
+  `estados_secundarios_desde` (jsonb que mantiene un trigger; la app solo escribe
+  `estados_secundarios`) para Visado/Mantenimiento. Se avisa una vez por subproyecto y
+  estado (`notificaciones.subproyecto_estado`).
 - **Estados de trámite** (0010_...): Pendiente → Sellado CFIA → Calificación RN →
   Público e Inscrito / Aprobado / Cancelado. "Público y Defectuoso" sigue en curso (se
   corrige y se vuelve a presentar). La lista de estados en curso vive en

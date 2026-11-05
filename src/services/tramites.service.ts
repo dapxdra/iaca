@@ -12,7 +12,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { emptyToUndefined } from "@/lib/form";
-import { TRAMITE_ESTADOS } from "@/lib/proyecto-flujo";
+import { TRAMITE_ESTADOS, TRAMITE_TIPOS, type TramiteTipo } from "@/lib/proyecto-flujo";
 import type { DateRange } from "@/lib/date-range";
 import type { Database } from "@/types/database";
 
@@ -23,7 +23,7 @@ export type Tramite = {
   proyecto_id: string;
   subproyecto_id: string | null;
   entidad: string;
-  tipo_tramite: string;
+  tipo_tramite: TramiteTipo;
   numero_expediente: string | null;
   estado: TramiteEstado;
   fecha_envio: string | null;
@@ -36,7 +36,7 @@ export type Tramite = {
 export type TramiteAlerta = {
   id: string;
   entidad: string;
-  tipo_tramite: string;
+  tipo_tramite: TramiteTipo;
   estado: TramiteEstado;
   fecha_envio: string | null;
   fecha_ultima_revision: string | null;
@@ -68,7 +68,7 @@ export const tramiteSchema = z
       z.string().uuid("Subproyecto inválido").nullable()
     ),
     entidad: z.string().trim().min(2, "Requerido").max(200),
-    tipo_tramite: z.string().trim().min(2, "Requerido").max(200),
+    tipo_tramite: z.enum(TRAMITE_TIPOS, "Seleccioná un tipo"),
     numero_expediente: optionalText,
     estado: z.enum(TRAMITE_ESTADOS),
     fecha_envio: optionalDate,
@@ -128,7 +128,7 @@ export type TramiteCliente = {
   id: string;
   subproyecto_nombre: string | null;
   entidad: string;
-  tipo_tramite: string;
+  tipo_tramite: TramiteTipo;
   numero_expediente: string | null;
   estado: TramiteEstado;
   fecha_envio: string | null;

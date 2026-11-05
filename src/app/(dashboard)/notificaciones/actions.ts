@@ -49,7 +49,7 @@ export async function ejecutarRevisionAction(): Promise<FormState> {
     revalidatePath("/notificaciones");
     return {
       status: "success",
-      message: `${r.proyectos} proyecto(s) y ${r.tramites} trámite(s) sin movimiento · ${r.notificaciones} aviso(s) nuevo(s) · ${r.correos} correo(s).`,
+      message: `${r.proyectos} proyecto(s), ${r.subproyectos} estado(s) de subproyecto y ${r.tramites} trámite(s) demorados · ${r.notificaciones} aviso(s) nuevo(s) · ${r.correos} correo(s).`,
     };
   } catch (error) {
     console.error("[notificaciones] revisión manual", error);

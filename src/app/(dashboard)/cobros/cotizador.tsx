@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { FileDown, RotateCcw } from "lucide-react";
 import { cotizadorContent } from "@/config/site";
 import { formatColones } from "@/lib/format";
+import type { DatosCliente } from "@/lib/cotizacion-pdf";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Section } from "@/components/ui/section";
 import {
   PARAMETROS_VIGENTES,
@@ -21,6 +22,8 @@ import {
 const GRUPOS = [...new Set(SERVICIOS.map((s) => s.grupo))];
 
 const GASTOS_VACIOS = { distanciaKm: "", horasTraslado: "", tarifaKmCGR: "", otros: "" };
+const CLIENTE_VACIO: DatosCliente = { nombre: "", telefono: "", servicio: "", descripcion: "" };
+const txt = cotizadorContent.cliente;
 
 const toNum = (s: string) => {
   const n = Number(s);
@@ -128,6 +131,9 @@ export function Cotizador() {
     iAvaluos: String(PARAMETROS_VIGENTES.iAvaluos),
     horaProfesional: String(PARAMETROS_VIGENTES.horaProfesional),
   });
+  const [cliente, setCliente] = useState(CLIENTE_VACIO);
+  const [errorNombre, setErrorNombre] = useState<string>();
+  const [exportando, setExportando] = useState(false);
 
   const servicio = SERVICIOS.find((s) => s.id === servicioId) ?? SERVICIOS[0];
   const v = valores[servicio.id] ?? valoresPorDefecto(servicio);
@@ -164,6 +170,26 @@ export function Cotizador() {
   function reiniciar() {
     setValores((prev) => ({ ...prev, [servicio.id]: valoresPorDefecto(servicio) }));
     setGastos(GASTOS_VACIOS);
+    setCliente(CLIENTE_VACIO);
+    setErrorNombre(undefined);
+  }
+
+  async function exportar() {
+    if (!cliente.nombre.trim()) {
+      setErrorNombre(txt.nombreRequerido);
+      document.getElementById("cot-cliente-nombre")?.focus();
+      return;
+    }
+    setExportando(true);
+    try {
+      const { exportarCotizacionPdf } = await import("@/lib/cotizacion-pdf");
+      await exportarCotizacionPdf({
+        ...resultado,
+        cliente: { ...cliente, servicio: cliente.servicio.trim() || servicio.nombre },
+      });
+    } finally {
+      setExportando(false);
+    }
   }
 
   const esAvaluo = servicio.traslado === "avaluo";
@@ -181,6 +207,65 @@ export function Cotizador() {
       <div id="cotizador" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
         <div className="flex flex-col gap-5">
           <p className="text-small text-muted-foreground">{cotizadorContent.description}</p>
+
+          <fieldset className="flex flex-col gap-4" data-cy="cotizador-cliente">
+            <legend className="pb-3 text-small font-semibold text-foreground">{txt.legend}</legend>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={txt.nombre} htmlFor="cot-cliente-nombre" required error={errorNombre}>
+                <Input
+                  id="cot-cliente-nombre"
+                  data-cy="cotizador-cliente-nombre"
+                  autoComplete="off"
+                  maxLength={120}
+                  value={cliente.nombre}
+                  onChange={(e) => {
+                    setCliente({ ...cliente, nombre: e.target.value });
+                    if (e.target.value.trim()) setErrorNombre(undefined);
+                  }}
+                  aria-invalid={errorNombre ? true : undefined}
+                  aria-describedby={errorNombre ? "cot-cliente-nombre-error" : undefined}
+                />
+              </Field>
+              <Field label={txt.telefono} htmlFor="cot-cliente-telefono">
+                <Input
+                  id="cot-cliente-telefono"
+                  data-cy="cotizador-cliente-telefono"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="off"
+                  maxLength={30}
+                  value={cliente.telefono}
+                  onChange={(e) => setCliente({ ...cliente, telefono: e.target.value })}
+                />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label={txt.servicio} htmlFor="cot-cliente-servicio" hint={txt.servicioHint}>
+                  <Input
+                    id="cot-cliente-servicio"
+                    data-cy="cotizador-cliente-servicio"
+                    maxLength={160}
+                    placeholder={servicio.nombre}
+                    value={cliente.servicio}
+                    onChange={(e) => setCliente({ ...cliente, servicio: e.target.value })}
+                    aria-describedby="cot-cliente-servicio-hint"
+                  />
+                </Field>
+              </div>
+              <div className="sm:col-span-2">
+                <Field label={txt.descripcion} htmlFor="cot-cliente-descripcion" hint={txt.descripcionHint}>
+                  <Textarea
+                    id="cot-cliente-descripcion"
+                    data-cy="cotizador-cliente-descripcion"
+                    rows={3}
+                    maxLength={1000}
+                    value={cliente.descripcion}
+                    onChange={(e) => setCliente({ ...cliente, descripcion: e.target.value })}
+                    aria-describedby="cot-cliente-descripcion-hint"
+                  />
+                </Field>
+              </div>
+            </div>
+          </fieldset>
 
           <Field label="Servicio" htmlFor="cot-servicio">
             <Select
@@ -348,6 +433,14 @@ export function Cotizador() {
               </dd>
             </div>
           </dl>
+          <Button
+            onClick={exportar}
+            disabled={exportando || resultado.honorarios.length === 0}
+            data-cy="cotizador-exportar-pdf"
+          >
+            <FileDown className="h-4 w-4" aria-hidden="true" />
+            {exportando ? cotizadorContent.exportandoLabel : cotizadorContent.exportarLabel}
+          </Button>
           <p className="text-small text-muted-foreground">{cotizadorContent.disclaimer}</p>
         </aside>
       </div>

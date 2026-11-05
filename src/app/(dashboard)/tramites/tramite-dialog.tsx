@@ -8,7 +8,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { createTramiteAction, updateTramiteAction } from "./actions";
 import type { Tramite } from "@/services/tramites.service";
 import { TRAMITE_LABEL } from "@/components/ui/badge";
-import { TRAMITE_ESTADOS } from "@/lib/proyecto-flujo";
+import { TRAMITE_ESTADOS, TRAMITE_TIPOS, TRAMITE_TIPO_LABEL } from "@/lib/proyecto-flujo";
 
 export function TramiteDialog({
   proyectos,
@@ -112,13 +112,22 @@ export function TramiteDialog({
                   />
                 </Field>
                 <Field label="Tipo de trámite" htmlFor="t-tipo" required error={errors.tipo_tramite}>
-                  <Input
+                  <Select
                     id="t-tipo"
                     name="tipo_tramite"
-                    placeholder="Inscripción de plano…"
                     defaultValue={tramite?.tipo_tramite ?? ""}
                     required
-                  />
+                    data-cy="tramite-tipo"
+                  >
+                    <option value="" disabled>
+                      Seleccioná un tipo…
+                    </option>
+                    {TRAMITE_TIPOS.map((t) => (
+                      <option key={t} value={t}>
+                        {TRAMITE_TIPO_LABEL[t]}
+                      </option>
+                    ))}
+                  </Select>
                 </Field>
               </div>
 

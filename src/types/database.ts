@@ -38,6 +38,24 @@ export type Database = {
         }
         Relationships: []
       }
+      alertas_estado_umbral: {
+        Row: {
+          clave: string
+          dias: number
+          updated_at: string
+        }
+        Insert: {
+          clave: string
+          dias: number
+          updated_at?: string
+        }
+        Update: {
+          clave?: string
+          dias?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       alertas_tramite_umbral: {
         Row: {
           dias: number
@@ -352,6 +370,8 @@ export type Database = {
           leida_at: string | null
           mensaje: string
           proyecto_id: string
+          subproyecto_estado: string | null
+          subproyecto_id: string | null
           tipo: Database["public"]["Enums"]["notificacion_tipo"]
           titulo: string
           tramite_id: string | null
@@ -366,6 +386,8 @@ export type Database = {
           leida_at?: string | null
           mensaje: string
           proyecto_id: string
+          subproyecto_estado?: string | null
+          subproyecto_id?: string | null
           tipo: Database["public"]["Enums"]["notificacion_tipo"]
           titulo: string
           tramite_id?: string | null
@@ -380,6 +402,8 @@ export type Database = {
           leida_at?: string | null
           mensaje?: string
           proyecto_id?: string
+          subproyecto_estado?: string | null
+          subproyecto_id?: string | null
           tipo?: Database["public"]["Enums"]["notificacion_tipo"]
           titulo?: string
           tramite_id?: string | null
@@ -391,6 +415,13 @@ export type Database = {
             columns: ["proyecto_id"]
             isOneToOne: false
             referencedRelation: "proyectos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificaciones_subproyecto_id_fkey"
+            columns: ["subproyecto_id"]
+            isOneToOne: false
+            referencedRelation: "subproyectos"
             referencedColumns: ["id"]
           },
           {
@@ -749,36 +780,45 @@ export type Database = {
       }
       subproyectos: {
         Row: {
+          correcciones: number
           created_at: string
           descripcion: string | null
-          estado: Database["public"]["Enums"]["proyecto_estado"]
+          estado: Database["public"]["Enums"]["subproyecto_estado"]
+          estado_cambiado_at: string
+          estados_secundarios: Database["public"]["Enums"]["subproyecto_estado_secundario"][]
+          estados_secundarios_desde: Json
           id: string
           nombre: string
           orden: number
           proyecto_id: string
-          tipo: Database["public"]["Enums"]["subproyecto_tipo"] | null
           updated_at: string
         }
         Insert: {
+          correcciones?: number
           created_at?: string
           descripcion?: string | null
-          estado?: Database["public"]["Enums"]["proyecto_estado"]
+          estado?: Database["public"]["Enums"]["subproyecto_estado"]
+          estado_cambiado_at?: string
+          estados_secundarios?: Database["public"]["Enums"]["subproyecto_estado_secundario"][]
+          estados_secundarios_desde?: Json
           id?: string
           nombre: string
           orden?: number
           proyecto_id: string
-          tipo?: Database["public"]["Enums"]["subproyecto_tipo"] | null
           updated_at?: string
         }
         Update: {
+          correcciones?: number
           created_at?: string
           descripcion?: string | null
-          estado?: Database["public"]["Enums"]["proyecto_estado"]
+          estado?: Database["public"]["Enums"]["subproyecto_estado"]
+          estado_cambiado_at?: string
+          estados_secundarios?: Database["public"]["Enums"]["subproyecto_estado_secundario"][]
+          estados_secundarios_desde?: Json
           id?: string
           nombre?: string
           orden?: number
           proyecto_id?: string
-          tipo?: Database["public"]["Enums"]["subproyecto_tipo"] | null
           updated_at?: string
         }
         Relationships: [
@@ -819,7 +859,7 @@ export type Database = {
           proyecto_id: string
           responsable_id: string | null
           subproyecto_id: string | null
-          tipo_tramite: string
+          tipo_tramite: Database["public"]["Enums"]["tramite_tipo"]
           updated_at: string
         }
         Insert: {
@@ -835,7 +875,7 @@ export type Database = {
           proyecto_id: string
           responsable_id?: string | null
           subproyecto_id?: string | null
-          tipo_tramite: string
+          tipo_tramite: Database["public"]["Enums"]["tramite_tipo"]
           updated_at?: string
         }
         Update: {
@@ -851,7 +891,7 @@ export type Database = {
           proyecto_id?: string
           responsable_id?: string | null
           subproyecto_id?: string | null
-          tipo_tramite?: string
+          tipo_tramite?: Database["public"]["Enums"]["tramite_tipo"]
           updated_at?: string
         }
         Relationships: [
@@ -1033,7 +1073,9 @@ export type Database = {
           id: string | null
           nombre: string | null
           responsable_id: string | null
+          supera_umbral: boolean | null
           ultima_bitacora: string | null
+          umbral_dias: number | null
         }
         Relationships: [
           {
@@ -1057,7 +1099,22 @@ export type Database = {
           proyecto_id: string | null
           subproyecto_id: string | null
           subproyecto_nombre: string | null
-          tipo_tramite: string | null
+          tipo_tramite: Database["public"]["Enums"]["tramite_tipo"] | null
+        }
+        Relationships: []
+      }
+      vw_subproyectos_demorados: {
+        Row: {
+          clave: string | null
+          dias_en_estado: number | null
+          estado: string | null
+          id: string | null
+          nombre: string | null
+          proyecto_codigo: string | null
+          proyecto_id: string | null
+          proyecto_responsable_id: string | null
+          supera_umbral: boolean | null
+          umbral_dias: number | null
         }
         Relationships: []
       }
@@ -1076,7 +1133,7 @@ export type Database = {
           proyecto_responsable_id: string | null
           responsable_id: string | null
           supera_umbral: boolean | null
-          tipo_tramite: string | null
+          tipo_tramite: Database["public"]["Enums"]["tramite_tipo"] | null
           umbral_dias: number | null
         }
         Relationships: [
@@ -2023,17 +2080,29 @@ export type Database = {
         | "transferencia"
         | "cheque"
         | "otro"
-      notificacion_tipo: "proyecto_sin_movimiento" | "tramite_sin_movimiento"
+      notificacion_tipo:
+        | "proyecto_sin_movimiento"
+        | "tramite_sin_movimiento"
+        | "subproyecto_demorado"
       proyecto_estado:
         | "contacto"
-        | "campo"
+        | "cotizacion_agenda"
+        | "georeferencia"
         | "calculo"
         | "dibujo"
         | "entrega"
         | "cerrado"
         | "cancelado"
       punto_fuente: "mapit_csv" | "gps" | "manual" | "postgresql_import"
-      subproyecto_tipo: "plano_catastrado" | "consultoria" | "alineamiento"
+      subproyecto_estado:
+        | "tramite"
+        | "carga_apt"
+        | "minutas"
+        | "preparacion"
+        | "cerrado"
+        | "cancelado"
+      subproyecto_estado_secundario: "mantenimiento" | "apelacion" | "visado"
+      tramite_tipo: "plano_catastrado" | "consultoria" | "alineamiento"
       tramite_estado:
         | "pendiente"
         | "sellado_cfia"
@@ -2188,10 +2257,15 @@ export const Constants = {
         "cheque",
         "otro",
       ],
-      notificacion_tipo: ["proyecto_sin_movimiento", "tramite_sin_movimiento"],
+      notificacion_tipo: [
+        "proyecto_sin_movimiento",
+        "tramite_sin_movimiento",
+        "subproyecto_demorado",
+      ],
       proyecto_estado: [
         "contacto",
-        "campo",
+        "cotizacion_agenda",
+        "georeferencia",
         "calculo",
         "dibujo",
         "entrega",
@@ -2199,7 +2273,16 @@ export const Constants = {
         "cancelado",
       ],
       punto_fuente: ["mapit_csv", "gps", "manual", "postgresql_import"],
-      subproyecto_tipo: ["plano_catastrado", "consultoria", "alineamiento"],
+      subproyecto_estado: [
+        "tramite",
+        "carga_apt",
+        "minutas",
+        "preparacion",
+        "cerrado",
+        "cancelado",
+      ],
+      subproyecto_estado_secundario: ["mantenimiento", "apelacion", "visado"],
+      tramite_tipo: ["plano_catastrado", "consultoria", "alineamiento"],
       tramite_estado: [
         "pendiente",
         "sellado_cfia",

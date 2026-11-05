@@ -21,9 +21,9 @@ export type Parametros = {
 
 /** Valores vigentes según la tabla del CIT (pág. 21 del folleto de tarifas). */
 export const PARAMETROS_VIGENTES: Parametros & { fuente: Record<keyof Parametros, string> } = {
-  i: 27.8,
-  iAvaluos: 22.5,
-  horaProfesional: 23411.05,
+  i: 33.426,
+  iAvaluos: 36.211,
+  horaProfesional: 37700,
   fuente: {
     i: "La Gaceta 89, mayo 2014",
     iAvaluos: "La Gaceta 134, julio 2012",
@@ -193,6 +193,29 @@ const ZONAS_URBANAS: Record<string, { tarifa: number; label: string }> = {
  */
 const AREA_MINIMA_URBANA = 300;
 
+/**
+ * Mínimos propios de la empresa por plano, en colones actuales (no se
+ * multiplican por i). Quedan por encima del mínimo del CIT, lo que el art. 22
+ * permite pactar.
+ */
+export const MINIMO_PLANO_URBANO = 130_000;
+export const MINIMO_PLANO_RURAL = 290_000;
+
+/** Agrega la línea que completa el subtotal hasta el mínimo por plano. */
+function ajustarMinimoPlano(lineas: Linea[], minimo: number, planos: number): Linea[] {
+  const subtotal = sumar(lineas);
+  const total = minimo * planos;
+  if (subtotal >= total) return lineas;
+  return [
+    ...lineas,
+    {
+      concepto: "Ajuste al mínimo por plano",
+      detalle: `₡${fmt(minimo)}${planos > 1 ? ` × ${planos} planos` : ""}`,
+      monto: total - subtotal,
+    },
+  ];
+}
+
 const IDA_TARIFAS: Record<string, number> = {
   "plano-facil": 5050,
   "plano-dificil": 6350,
@@ -243,7 +266,7 @@ export const SERVICIOS: Servicio[] = [
     grupo: AGRIMENSURA,
     nombre: "Levantamiento o replanteo urbano",
     articulo: "",
-    nota: "Parcelas menores de 1000 m², o de 1000 a 50 000 m² en zona urbana, o mayores con fines de urbanización o industria.",
+    nota: "Parcelas menores de 1000 m², o de 1000 a 50 000 m² en zona urbana, o mayores con fines de urbanización o industria. Mínimo ₡130 000 por plano.",
     traslado: "agrimensura",
     campos: [
       { tipo: "numero", id: "area", label: "Área de la parcela", unidad: "m²", defecto: 300, step: 1 },
@@ -287,7 +310,7 @@ export const SERVICIOS: Servicio[] = [
           monto: -0.2 * (base + dif) * (n - 9),
         });
       }
-      return lineas;
+      return ajustarMinimoPlano(lineas, MINIMO_PLANO_URBANO, n);
     },
   },
   {
@@ -295,7 +318,7 @@ export const SERVICIOS: Servicio[] = [
     grupo: AGRIMENSURA,
     nombre: "Levantamiento o replanteo rural",
     articulo: "",
-    nota: "Parcelas mayores de 1000 m² fuera de zona urbana. Mínimo ₡8370 × i.",
+    nota: "Parcelas mayores de 1000 m² fuera de zona urbana. Mínimo ₡290 000 por plano.",
     traslado: "agrimensura",
     campos: [
       { tipo: "numero", id: "ha", label: "Área de la parcela", unidad: "ha", defecto: 1, step: 0.01 },
@@ -324,7 +347,7 @@ export const SERVICIOS: Servicio[] = [
       if (tramo30 > 0) {
         lineas.push({ concepto: "Descuento parcelas 26 en adelante", detalle: `30 % en ${tramo30} parcelas`, monto: -0.3 * (base + dif) * tramo30 });
       }
-      return lineas;
+      return ajustarMinimoPlano(lineas, MINIMO_PLANO_RURAL, n);
     },
   },
   {

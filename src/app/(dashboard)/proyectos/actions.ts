@@ -6,7 +6,9 @@ import {
   proyectoSchema,
   cambiarEstadoSchema,
   cambiarEstadoSubproyectoSchema,
+  estadosSecundariosSchema,
   subproyectoSchema,
+  actualizarEstadosSecundarios,
   createProyecto,
   updateProyecto,
   deleteProyecto,
@@ -64,6 +66,13 @@ export const cambiarEstadoSubproyectoAction = makeFormAction({
   handler: (data) => cambiarEstadoSubproyecto(data),
   revalidate: "/proyectos",
   successMessage: "Estado del subproyecto actualizado.",
+});
+
+export const estadosSecundariosAction = makeFormAction({
+  schema: estadosSecundariosSchema,
+  handler: (data) => actualizarEstadosSecundarios(data),
+  revalidate: "/proyectos",
+  successMessage: "Estados de segundo plano actualizados.",
 });
 
 export const createEventoAction = makeFormAction({

@@ -215,8 +215,8 @@ export const dashboardPages: Record<string, DashboardPageContent> = {
 /** Valores iniciales del trámite que se crea junto con un subproyecto. */
 export const subproyectoTramiteDefaults = {
   entidad: "Registro Nacional — Catastro",
-  tipoTramite: "Inscripción de plano catastrado",
-  hint: "El trámite se crea en estado Pendiente y queda asociado a este subproyecto.",
+  tipoTramite: "plano_catastrado", // valor de TRAMITE_TIPOS (src/lib/proyecto-flujo.ts)
+  hint: "El trámite se crea en estado Pendiente y queda asociado a este subproyecto, que arranca en Trámite.",
 };
 
 export const cotizadorContent = {
@@ -225,6 +225,33 @@ export const cotizadorContent = {
     "Honorarios mínimos según el Reglamento de Tarifas del Colegio de Ingenieros Topógrafos (Decreto 17481-MOPT) y los aranceles de peritajes y avalúos del CFIA (Decreto 35298-MOPT).",
   disclaimer:
     "Estimación con las tarifas mínimas del reglamento. El art. 22 permite pactar por escrito un monto mayor. No incluye IVA.",
+  cliente: {
+    legend: "Datos del cliente",
+    nombre: "Nombre",
+    telefono: "Teléfono",
+    servicio: "Servicio",
+    servicioHint: "Si se deja vacío, se usa el servicio seleccionado arriba",
+    descripcion: "Descripción",
+    descripcionHint: "Ubicación, alcance o detalles del trabajo",
+    nombreRequerido: "Ingresá el nombre del cliente para exportar la cotización.",
+  },
+  exportarLabel: "Exportar PDF",
+  exportandoLabel: "Generando…",
+  pdf: {
+    titulo: "Cotización",
+    fecha: "Fecha",
+    validaHasta: "Válida hasta",
+    honorarios: "Honorarios",
+    gastos: "Gastos reembolsables",
+    total: "Total",
+    condicionesTitulo: "Condiciones",
+    /** `{fecha}` se reemplaza por la fecha de vencimiento. */
+    condiciones: [
+      "Cotización sujeta a cambios.",
+      "Validez de un mes a partir de su emisión, hasta el {fecha}.",
+      "Los montos no incluyen IVA.",
+    ],
+  },
 };
 
 export const homeContent = {
@@ -798,13 +825,17 @@ export const alertasContent = {
     `Trámite sin movimiento hace ${dias} días: ${entidad} · ${tipo}`,
   tramiteMensaje: (codigo: string, estado: string, dias: number) =>
     `${codigo}: lleva ${dias} días en estado ${estado}, sin revisión ni cambio registrado.`,
+  subproyectoTitulo: (codigo: string, nombre: string, estado: string, dias: number) =>
+    `${codigo} · ${nombre}: ${dias} días en ${estado}`,
+  subproyectoMensaje: (nombre: string, estado: string, dias: number, esperado: number) =>
+    `El subproyecto «${nombre}» lleva ${dias} días en ${estado}; lo esperado son ${esperado} días.`,
   emailAsunto: (total: number) =>
     total === 1
-      ? `${siteConfig.name}: 1 proyecto o trámite sin movimiento`
-      : `${siteConfig.name}: ${total} proyectos o trámites sin movimiento`,
+      ? `${siteConfig.name}: 1 aviso de trabajo demorado`
+      : `${siteConfig.name}: ${total} avisos de trabajo demorado`,
   emailSaludo: (nombre: string) => `Hola ${nombre},`,
   emailIntro:
-    "Estos proyectos y trámites llevan más tiempo del esperado sin avanzar. Revisalos y actualizá su estado o registrá el seguimiento.",
+    "Estos proyectos, subproyectos y trámites llevan más tiempo del esperado sin avanzar. Revisalos y actualizá su estado o registrá el seguimiento.",
   emailVerLabel: "Abrir",
   emailBandejaLabel: "Ver todas las notificaciones",
   emailPie:
@@ -817,7 +848,8 @@ export const alertasContent = {
   marcarTodasLabel: "Marcar todas como leídas",
   vacioTitulo: "No hay notificaciones",
   vacioNoLeidas: "Estás al día: nada pendiente de revisar.",
-  vacioTodas: "Cuando un proyecto o trámite se quede sin movimiento, el aviso aparece acá.",
+  vacioTodas:
+    "Cuando un proyecto, subproyecto o trámite se demore más de lo esperado, el aviso aparece acá.",
 } as const;
 
 /**

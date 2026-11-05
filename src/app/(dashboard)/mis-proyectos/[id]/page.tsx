@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { getProyecto } from "@/services/proyectos.service";
 import { listTramitesCliente } from "@/services/tramites.service";
-import { ESTADO_FLOW } from "@/lib/proyecto-flujo";
+import { ESTADO_FLOW, TRAMITE_TIPO_LABEL } from "@/lib/proyecto-flujo";
 import { Section, DataItem } from "@/components/ui/section";
 import {
   EstadoProyectoBadge,
@@ -148,7 +148,7 @@ export default async function MiProyectoDetallePage({
                 className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-4"
               >
                 <div className="min-w-0">
-                  <p className="font-medium text-foreground">{t.tipo_tramite}</p>
+                  <p className="font-medium text-foreground">{TRAMITE_TIPO_LABEL[t.tipo_tramite]}</p>
                   <p className="text-small text-muted-foreground">
                     {[
                       t.entidad,

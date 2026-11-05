@@ -107,14 +107,21 @@ El sistema se rige por el sistema de referencia geodésico oficial de Costa Rica
 El ciclo de vida de todo proyecto sigue estos estados, en orden:
 
 ```
-Contacto → Campo → Cálculo → Dibujo → Entrega
+Contacto → Cotización/Agenda → Cálculo → Georeferencia → Dibujo → Entrega
 ```
 
 - **Contacto**: se registra el cliente y los datos iniciales de la solicitud.
-- **Campo**: se agenda y ejecuta el levantamiento; se llena la bitácora y se cargan los datos de campo (CSV/coordenadas/fotos).
+- **Cotización/Agenda**: se cotiza y se agenda el levantamiento.
 - **Cálculo**: la oficina procesa los datos topográficos.
+- **Georeferencia**: compuerta que espera a los subproyectos y trámites. El proyecto no pasa a Dibujo mientras tenga subproyectos sin cerrar o trámites en curso.
 - **Dibujo**: se elabora el plano/entregable (posible archivo DWG).
-- **Entrega**: se entrega al cliente y, cuando corresponde, se envían documentos a entidades gubernamentales (sección 4.5); el proyecto puede quedar en seguimiento hasta que el trámite se resuelva, y luego se cierra.
+- **Entrega**: se entrega al cliente y luego se cierra.
+
+**Subproyectos** — flujo propio: `Trámite → Carga APT → Minutas → Preparación`, y luego se cierran. Tienen además estados de segundo plano simultáneos, que no cambian el principal: **Mantenimiento**, **Apelación** y **Visado**.
+
+**Trámites** — su tipo es **Plano catastrado**, **Consultoría** o **Alineamiento**. Sus estados siguen las etapas CFIA/Registro Nacional (sección 4.5).
+
+**Correcciones**: tanto el proyecto como el subproyecto pueden volver a cualquier estado anterior (por ejemplo, de Minutas a Carga APT). En el subproyecto, cada retroceso queda contado como corrección.
 
 Cada cambio de estado debe quedar registrado con fecha y usuario responsable, para poder calcular los KPI de tiempo de ciclo por etapa.
 
@@ -156,6 +163,15 @@ El sistema debe dejar claro en la interfaz cuál es cuál, y nunca mezclar ambos
 
 - Alerta cuando un trámite gubernamental supera el umbral de días sin revisión (sección 4.5) — mínimo dentro de la app (panel de alertas); correo electrónico como mejora deseable.
 - Notificación opcional cuando un proyecto pasa X días sin actividad de bitácora en la fase de "Campo".
+- Duración esperada por estado; al superarla se notifica (editable por admin):
+
+  | Estado | Duración |
+  |---|---|
+  | Preparación (subproyecto) | 1 semana |
+  | Visado (segundo plano) | 15 días |
+  | Carga APT y Minutas (subproyecto, cada uno) | 10 días |
+  | Mantenimiento (segundo plano) | 15 días |
+  | Dibujo (proyecto) | 1 semana |
 - (Fase futura) recordatorios de fechas estimadas de entrega próximas a vencer.
 
 ## 11. Fuera de alcance del MVP (posibles fases futuras)
