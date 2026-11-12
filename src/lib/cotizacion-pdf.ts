@@ -28,6 +28,22 @@ const pdfText = (s: string) =>
 
 const monto = (n: number) => pdfText(formatColones(n));
 
+/**
+ * El cliente no ve el "Ajuste al mínimo": se reparte en proporción entre las
+ * líneas positivas, así el total no cambia y la suma del detalle sigue cuadrando.
+ */
+function absorberAjustes(lineas: Linea[]): Linea[] {
+  const ajuste = lineas.filter((l) => l.ajuste).reduce((s, l) => s + l.monto, 0);
+  const resto = lineas.filter((l) => !l.ajuste);
+  const base = resto.reduce((s, l) => s + (l.monto > 0 ? l.monto : 0), 0);
+  if (ajuste === 0) return resto;
+  // Sin línea que lo absorba, queda como un único rubro sin mencionar el mínimo.
+  if (base <= 0) {
+    return [...resto, { concepto: cotizadorContent.pdf.honorarios, detalle: "", monto: ajuste }];
+  }
+  return resto.map((l) => (l.monto > 0 ? { ...l, monto: l.monto + ajuste * (l.monto / base) } : l));
+}
+
 /** Genera la cotización y la descarga. jsPDF se carga recién al exportar. */
 export async function exportarCotizacionPdf(datos: DatosCotizacion) {
   const { jsPDF } = await import("jspdf");
@@ -105,7 +121,7 @@ export async function exportarCotizacionPdf(datos: DatosCotizacion) {
     }
     y += 3;
   };
-  tabla(t.honorarios, datos.honorarios);
+  tabla(t.honorarios, absorberAjustes(datos.honorarios));
   tabla(t.gastos, datos.reembolsables);
 
   // Totales

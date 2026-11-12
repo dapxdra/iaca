@@ -803,6 +803,10 @@ export const offlineCaptureContent = {
  * cola de entradas pendientes tras 7 días sin uso (sí lo hace con un sitio
  * abierto en Safari).
  */
+export const appShellContent = {
+  backLabel: "Volver atrás",
+};
+
 export const installPromptContent = {
   title: "Instalá la app en tu teléfono",
   description:

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Share, Smartphone } from "lucide-react";
 import { installPromptContent as t } from "@/config/site";
 import { Button } from "@/components/ui/button";
+import { isInstalled } from "@/lib/standalone";
 
 /** Evento no estándar de Chrome/Edge/Android (no está en los tipos del DOM). */
 type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
@@ -11,12 +12,6 @@ type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
 const DISMISSED_KEY = "iaca-install-dismissed-at";
 const DISMISS_FOR_MS = 7 * 24 * 60 * 60 * 1000;
 
-function isInstalled(): boolean {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
 
 // iPadOS se presenta como Mac; se distingue por la pantalla táctil.
 function isIos(): boolean {

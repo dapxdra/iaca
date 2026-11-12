@@ -300,7 +300,7 @@ export function Cotizador() {
 
           <fieldset className="flex flex-col gap-4 border-t border-border pt-4">
             <legend className="pt-4 text-small font-semibold text-foreground">
-              Gastos reembolsables {esAvaluo ? "(art. 2, Decreto 35298)" : "(art. 4, Decreto 17481)"}
+              Gastos reembolsables
             </legend>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field

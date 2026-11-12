@@ -25,8 +25,8 @@ export const PARAMETROS_VIGENTES: Parametros & { fuente: Record<keyof Parametros
   iAvaluos: 36.211,
   horaProfesional: 37700,
   fuente: {
-    i: "La Gaceta 89, mayo 2014",
-    iAvaluos: "La Gaceta 134, julio 2012",
+    i: "La Gaceta Nº 133, 13 de julio de 2022",
+    iAvaluos: "La Gaceta N° 224 del 23 noviembre de 2022 y La Gaceta N°3 del 11 de enero de 2023",
     horaProfesional: "La Gaceta 134, julio 2012",
   },
 };
@@ -54,7 +54,16 @@ export type Campo =
     }
   | { tipo: "check"; id: string; label: string; defecto: boolean };
 
-export type Linea = { concepto: string; detalle: string; monto: number };
+export type Linea = {
+  concepto: string;
+  detalle: string;
+  monto: number;
+  /**
+   * Solo completa el subtotal hasta un mínimo. Se ve en el cotizador interno;
+   * el PDF para el cliente la reparte entre las demás líneas.
+   */
+  ajuste?: true;
+};
 
 /** Define qué regla de gastos de traslado aplica (art. 4 vs. art. 2 de avalúos). */
 export type TipoTraslado = "agrimensura" | "topografia" | "avaluo";
@@ -146,6 +155,7 @@ function avaluo(
       concepto: `Ajuste al mínimo de ${horasMinimas} horas profesionales`,
       detalle: `${horasMinimas} × ₡${fmt(p.horaProfesional)}`,
       monto: minimo - subtotal,
+      ajuste: true,
     });
   }
   return lineas;
@@ -212,6 +222,7 @@ function ajustarMinimoPlano(lineas: Linea[], minimo: number, planos: number): Li
       concepto: "Ajuste al mínimo por plano",
       detalle: `₡${fmt(minimo)}${planos > 1 ? ` × ${planos} planos` : ""}`,
       monto: total - subtotal,
+      ajuste: true,
     },
   ];
 }

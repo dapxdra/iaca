@@ -22,6 +22,7 @@ import { OutboxStatus } from "@/components/offline/outbox-status";
 import { useOutbox } from "@/components/offline/outbox-provider";
 import { clearOfflineSession } from "@/lib/bitacora-outbox";
 import { BrandLogo } from "@/components/brand-logo";
+import { AppBackButton } from "@/components/app-back-button";
 
 const ICONS: Record<string, LucideIcon> = {
   proyectos: FolderKanban,
@@ -228,6 +229,7 @@ export function DashboardSidebar({
     <>
       {/* Barra superior — solo móvil */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-ink/60 bg-ink px-4 py-3 text-paper lg:hidden">
+        <AppBackButton home={defaultRouteForRole(role)} />
         <Link
           href={defaultRouteForRole(role)}
           className="flex items-center gap-2 rounded-md px-1 text-h3 font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paper/40"
