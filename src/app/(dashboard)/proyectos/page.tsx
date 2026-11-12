@@ -14,7 +14,7 @@ import { listClienteOptions } from "@/services/clientes.service";
 import { listProfileOptions } from "@/services/profiles.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { SearchField } from "../_components/search-field";
-import { TableWrap, Th, Td } from "@/components/ui/table";
+import { TableWrap, Th, Td, MobileOnly } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EstadoProyectoBadge } from "@/components/ui/badge";
 import { ProyectoDialog } from "./proyecto-dialog";
@@ -110,11 +110,11 @@ export default async function ProyectosPage({
               <thead>
                 <tr>
                   <Th>Código</Th>
-                  <Th>Nombre</Th>
-                  <Th>Cliente</Th>
+                  <Th hideOnMobile>Nombre</Th>
+                  <Th hideOnMobile>Cliente</Th>
                   <Th>Estado</Th>
-                  <Th>Zona</Th>
-                  <Th>Entrega est.</Th>
+                  <Th hideOnMobile>Zona</Th>
+                  <Th hideOnMobile>Entrega est.</Th>
                   <Th className="w-0" />
                 </tr>
               </thead>
@@ -129,14 +129,18 @@ export default async function ProyectosPage({
                       >
                         {p.codigo}
                       </Link>
+                      <MobileOnly>
+                        <span className="text-foreground">{p.nombre}</span>
+                        {p.cliente && <span className="block">{p.cliente.nombre}</span>}
+                      </MobileOnly>
                     </Td>
-                    <Td className="text-foreground">{p.nombre}</Td>
-                    <Td className="text-muted-foreground">{p.cliente?.nombre ?? "—"}</Td>
+                    <Td hideOnMobile className="text-foreground">{p.nombre}</Td>
+                    <Td hideOnMobile className="text-muted-foreground">{p.cliente?.nombre ?? "—"}</Td>
                     <Td>
                       <EstadoProyectoBadge estado={p.estado} />
                     </Td>
-                    <Td className="text-muted-foreground">{p.zona ?? "—"}</Td>
-                    <Td className="whitespace-nowrap text-muted-foreground">
+                    <Td hideOnMobile className="text-muted-foreground">{p.zona ?? "—"}</Td>
+                    <Td hideOnMobile className="whitespace-nowrap text-muted-foreground">
                       {formatDate(p.fecha_estimada_entrega)}
                     </Td>
                     <Td className="text-right">

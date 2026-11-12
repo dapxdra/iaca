@@ -76,7 +76,7 @@ export default async function KpiPage() {
               <Th>Zona</Th>
               <Th numeric>Proyectos</Th>
               <Th numeric>Activos</Th>
-              <Th numeric>Cerrados</Th>
+              <Th numeric hideOnMobile>Cerrados</Th>
               <Th numeric>Ciclo prom. (días)</Th>
             </tr>
           </thead>
@@ -89,7 +89,7 @@ export default async function KpiPage() {
                   <Td className="text-foreground">{z.zona ?? "Sin zona"}</Td>
                   <Td numeric>{z.total_proyectos}</Td>
                   <Td numeric>{z.proyectos_activos}</Td>
-                  <Td numeric>{z.proyectos_cerrados}</Td>
+                  <Td numeric hideOnMobile>{z.proyectos_cerrados}</Td>
                   <Td numeric>
                     {z.promedio_dias_ciclo === null ? "—" : Math.round(z.promedio_dias_ciclo)}
                   </Td>
@@ -110,7 +110,7 @@ export default async function KpiPage() {
               <tr>
                 <Th>Tipo de servicio</Th>
                 <Th numeric>Proyectos</Th>
-                <Th numeric>Activos</Th>
+                <Th numeric hideOnMobile>Activos</Th>
                 <Th numeric>A tiempo</Th>
                 <Th numeric>Ciclo prom. (días)</Th>
               </tr>
@@ -125,7 +125,7 @@ export default async function KpiPage() {
                     <tr key={t.tipo_servicio ?? "sin-tipo"}>
                       <Td className="text-foreground">{t.tipo_servicio ?? "Sin tipo"}</Td>
                       <Td numeric>{t.total_proyectos}</Td>
-                      <Td numeric>{t.proyectos_activos}</Td>
+                      <Td numeric hideOnMobile>{t.proyectos_activos}</Td>
                       <Td numeric>
                         {conEntrega === 0
                           ? "—"
@@ -148,12 +148,12 @@ export default async function KpiPage() {
           <thead>
             <tr>
               <Th>Código</Th>
-              <Th>Zona</Th>
+              <Th hideOnMobile>Zona</Th>
               <Th>Estado</Th>
-              <Th numeric>Subproy.</Th>
-              <Th numeric>Bitácora</Th>
-              <Th numeric>Puntos</Th>
-              <Th>Entrega est.</Th>
+              <Th numeric hideOnMobile>Subproy.</Th>
+              <Th numeric hideOnMobile>Bitácora</Th>
+              <Th numeric hideOnMobile>Puntos</Th>
+              <Th hideOnMobile>Entrega est.</Th>
               <Th>Entrega</Th>
             </tr>
           </thead>
@@ -171,14 +171,14 @@ export default async function KpiPage() {
                       {p.codigo}
                     </Link>
                   </Td>
-                  <Td className="text-muted-foreground">{p.zona ?? "—"}</Td>
+                  <Td hideOnMobile className="text-muted-foreground">{p.zona ?? "—"}</Td>
                   <Td>
                     <EstadoProyectoBadge estado={p.estado} />
                   </Td>
-                  <Td numeric>{p.total_subproyectos}</Td>
-                  <Td numeric>{p.total_entradas_bitacora}</Td>
-                  <Td numeric>{p.total_puntos}</Td>
-                  <Td className="whitespace-nowrap text-muted-foreground">
+                  <Td numeric hideOnMobile>{p.total_subproyectos}</Td>
+                  <Td numeric hideOnMobile>{p.total_entradas_bitacora}</Td>
+                  <Td numeric hideOnMobile>{p.total_puntos}</Td>
+                  <Td hideOnMobile className="whitespace-nowrap text-muted-foreground">
                     {formatDate(p.fecha_estimada_entrega)}
                   </Td>
                   <Td>

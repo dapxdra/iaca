@@ -6,7 +6,7 @@ import { formatColones, formatDate } from "@/lib/format";
 import { getCobroProyecto, listPagos } from "@/services/cobros.service";
 import { Section } from "@/components/ui/section";
 import { StatCard } from "@/components/ui/stat-card";
-import { TableWrap, Th, Td, EmptyRow } from "@/components/ui/table";
+import { TableWrap, Th, Td, EmptyRow, MobileOnly } from "@/components/ui/table";
 import { DeleteForm } from "@/components/ui/delete-form";
 import { MontoCobrarForm, RegistrarPagoForm } from "./cobro-forms";
 import { deletePagoAction } from "../actions";
@@ -81,8 +81,8 @@ export default async function CobroDetallePage({
             <tr>
               <Th>Fecha</Th>
               <Th numeric>Monto</Th>
-              <Th>Método</Th>
-              <Th>Notas</Th>
+              <Th hideOnMobile>Método</Th>
+              <Th hideOnMobile>Notas</Th>
               {canWrite && <Th className="w-0" />}
             </tr>
           </thead>
@@ -94,12 +94,15 @@ export default async function CobroDetallePage({
                 <tr key={p.id} data-cy={`pago-row-${p.id}`} className="group">
                   <Td className="whitespace-nowrap text-muted-foreground">
                     {formatDate(p.fecha_pago)}
+                    <MobileOnly>{METODO_LABEL[p.metodo] ?? p.metodo}</MobileOnly>
                   </Td>
                   <Td numeric className="whitespace-nowrap font-medium text-foreground">
                     {formatColones(p.monto)}
                   </Td>
-                  <Td className="text-muted-foreground">{METODO_LABEL[p.metodo] ?? p.metodo}</Td>
-                  <Td className="text-muted-foreground">{p.notas ?? "—"}</Td>
+                  <Td hideOnMobile className="text-muted-foreground">
+                    {METODO_LABEL[p.metodo] ?? p.metodo}
+                  </Td>
+                  <Td hideOnMobile className="text-muted-foreground">{p.notas ?? "—"}</Td>
                   {canWrite && (
                     <Td className="text-right">
                       <span className="opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">

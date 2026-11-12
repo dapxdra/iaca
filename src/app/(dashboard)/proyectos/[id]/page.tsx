@@ -25,7 +25,7 @@ import {
 import { getCobroProyecto } from "@/services/cobros.service";
 import { listArchivosProyecto } from "@/services/archivos.service";
 import { Section, DataItem } from "@/components/ui/section";
-import { TableWrap, Th, Td } from "@/components/ui/table";
+import { TableWrap, Th, Td, MobileOnly } from "@/components/ui/table";
 import {
   EstadoProyectoBadge,
   EstadoSubproyectoBadge,
@@ -367,23 +367,33 @@ export default async function ProyectoDetallePage({
             <thead>
               <tr>
                 <Th>Entidad</Th>
-                <Th>Tipo</Th>
-                {subproyectos.length > 0 && <Th>Subproyecto</Th>}
-                <Th>Expediente</Th>
-                <Th>Envío</Th>
+                <Th hideOnMobile>Tipo</Th>
+                {subproyectos.length > 0 && <Th hideOnMobile>Subproyecto</Th>}
+                <Th hideOnMobile>Expediente</Th>
+                <Th hideOnMobile>Envío</Th>
                 <Th>Estado</Th>
               </tr>
             </thead>
             <tbody>
               {tramites.map((t) => (
                 <tr key={t.id}>
-                  <Td className="text-foreground">{t.entidad}</Td>
-                  <Td className="text-muted-foreground">{TRAMITE_TIPO_LABEL[t.tipo_tramite]}</Td>
+                  <Td className="text-foreground">
+                    {t.entidad}
+                    <MobileOnly>
+                      {TRAMITE_TIPO_LABEL[t.tipo_tramite]}
+                      {t.subproyecto && ` · ${t.subproyecto.nombre}`}
+                    </MobileOnly>
+                  </Td>
+                  <Td hideOnMobile className="text-muted-foreground">
+                    {TRAMITE_TIPO_LABEL[t.tipo_tramite]}
+                  </Td>
                   {subproyectos.length > 0 && (
-                    <Td className="text-muted-foreground">{t.subproyecto?.nombre ?? "—"}</Td>
+                    <Td hideOnMobile className="text-muted-foreground">
+                      {t.subproyecto?.nombre ?? "—"}
+                    </Td>
                   )}
-                  <Td className="tabular-nums">{t.numero_expediente ?? "—"}</Td>
-                  <Td className="whitespace-nowrap text-muted-foreground">
+                  <Td hideOnMobile className="tabular-nums">{t.numero_expediente ?? "—"}</Td>
+                  <Td hideOnMobile className="whitespace-nowrap text-muted-foreground">
                     {formatDate(t.fecha_envio)}
                   </Td>
                   <Td>
@@ -482,8 +492,8 @@ export default async function ProyectoDetallePage({
               <tr>
                 <Th>Fecha</Th>
                 <Th>Actividad</Th>
-                <Th>Trabajador</Th>
-                <Th>Equipo</Th>
+                <Th hideOnMobile>Trabajador</Th>
+                <Th hideOnMobile>Equipo</Th>
               </tr>
             </thead>
             <tbody>
@@ -492,9 +502,16 @@ export default async function ProyectoDetallePage({
                   <Td className="whitespace-nowrap text-muted-foreground">
                     {formatDate(b.fecha)}
                   </Td>
-                  <Td className="text-foreground">{b.actividad}</Td>
-                  <Td className="text-muted-foreground">{b.trabajador?.full_name ?? "—"}</Td>
-                  <Td className="text-muted-foreground">{b.equipo_utilizado ?? "—"}</Td>
+                  <Td className="text-foreground">
+                    {b.actividad}
+                    {b.trabajador && <MobileOnly>{b.trabajador.full_name}</MobileOnly>}
+                  </Td>
+                  <Td hideOnMobile className="text-muted-foreground">
+                    {b.trabajador?.full_name ?? "—"}
+                  </Td>
+                  <Td hideOnMobile className="text-muted-foreground">
+                    {b.equipo_utilizado ?? "—"}
+                  </Td>
                 </tr>
               ))}
             </tbody>

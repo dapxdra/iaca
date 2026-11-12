@@ -8,7 +8,7 @@ import { listTramites, listAlertas } from "@/services/tramites.service";
 import { listProyectoOptions, listSubproyectoOptions } from "@/services/proyectos.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { DateRangeFilter } from "../_components/date-range-filter";
-import { TableWrap, Th, Td } from "@/components/ui/table";
+import { TableWrap, Th, Td, MobileOnly } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EstadoTramiteBadge } from "@/components/ui/badge";
 import { TRAMITE_TIPO_LABEL } from "@/lib/proyecto-flujo";
@@ -185,13 +185,17 @@ export default async function TramitesPage({
           <thead>
             <tr>
               <Th>Proyecto</Th>
-              <Th>Entidad</Th>
-              <Th>Tipo</Th>
-              <Th>Expediente</Th>
-              <Th>Envío</Th>
-              <Th>Últ. revisión</Th>
+              <Th hideOnMobile>Entidad</Th>
+              <Th hideOnMobile>Tipo</Th>
+              <Th hideOnMobile>Expediente</Th>
+              <Th hideOnMobile>Envío</Th>
+              <Th hideOnMobile>Últ. revisión</Th>
               <Th>Estado</Th>
-              {canWrite && <Th className="w-0 text-right">Acciones</Th>}
+              {canWrite && (
+                <Th className="w-0 text-right">
+                  <span className="sr-only md:not-sr-only">Acciones</span>
+                </Th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -213,14 +217,20 @@ export default async function TramitesPage({
                       {t.subproyecto.nombre}
                     </span>
                   )}
+                  <MobileOnly>
+                    <span className="text-foreground">{t.entidad}</span> ·{" "}
+                    {TRAMITE_TIPO_LABEL[t.tipo_tramite]}
+                  </MobileOnly>
                 </Td>
-                <Td className="text-foreground">{t.entidad}</Td>
-                <Td className="text-muted-foreground">{TRAMITE_TIPO_LABEL[t.tipo_tramite]}</Td>
-                <Td className="tabular-nums">{t.numero_expediente ?? "—"}</Td>
-                <Td className="whitespace-nowrap text-muted-foreground">
+                <Td hideOnMobile className="text-foreground">{t.entidad}</Td>
+                <Td hideOnMobile className="text-muted-foreground">
+                  {TRAMITE_TIPO_LABEL[t.tipo_tramite]}
+                </Td>
+                <Td hideOnMobile className="tabular-nums">{t.numero_expediente ?? "—"}</Td>
+                <Td hideOnMobile className="whitespace-nowrap text-muted-foreground">
                   {formatDate(t.fecha_envio)}
                 </Td>
-                <Td className="whitespace-nowrap text-muted-foreground">
+                <Td hideOnMobile className="whitespace-nowrap text-muted-foreground">
                   {formatDate(t.fecha_ultima_revision)}
                 </Td>
                 <Td>

@@ -8,7 +8,7 @@ import { listBitacora } from "@/services/bitacora.service";
 import { listProyectoOptions } from "@/services/proyectos.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { DateRangeFilter } from "../_components/date-range-filter";
-import { TableWrap, Th, Td } from "@/components/ui/table";
+import { TableWrap, Th, Td, MobileOnly } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DeleteForm } from "@/components/ui/delete-form";
 import { BitacoraDialog } from "./bitacora-dialog";
@@ -95,20 +95,27 @@ export default async function BitacoraPage({
           <thead>
             <tr>
               <Th>Fecha</Th>
-              <Th>Proyecto</Th>
+              <Th hideOnMobile>Proyecto</Th>
               <Th>Actividad</Th>
-              <Th>Horario</Th>
-              <Th>Trabajador</Th>
-              <Th>Equipo</Th>
-              <Th>Fotos</Th>
+              <Th hideOnMobile>Horario</Th>
+              <Th hideOnMobile>Trabajador</Th>
+              <Th hideOnMobile>Equipo</Th>
+              <Th hideOnMobile>Fotos</Th>
               <Th className="w-0" />
             </tr>
           </thead>
           <tbody>
             {entradas.map((b) => (
               <tr key={b.id} data-cy={`bitacora-row-${b.id}`} className="group">
-                <Td className="whitespace-nowrap text-muted-foreground">{formatDate(b.fecha)}</Td>
-                <Td className="whitespace-nowrap">
+                <Td className="whitespace-nowrap text-muted-foreground">
+                  {formatDate(b.fecha)}
+                  {b.proyecto && (
+                    <MobileOnly>
+                      <span className="tabular-nums text-foreground">{b.proyecto.codigo}</span>
+                    </MobileOnly>
+                  )}
+                </Td>
+                <Td hideOnMobile className="whitespace-nowrap">
                   {!b.proyecto ? (
                     "—"
                   ) : isStaff(profile.role) ? (
@@ -123,12 +130,14 @@ export default async function BitacoraPage({
                   )}
                 </Td>
                 <Td className="max-w-md text-foreground">{b.actividad}</Td>
-                <Td className="whitespace-nowrap tabular-nums text-muted-foreground">
+                <Td hideOnMobile className="whitespace-nowrap tabular-nums text-muted-foreground">
                   {horas(b.hora_inicio, b.hora_fin)}
                 </Td>
-                <Td className="text-muted-foreground">{b.trabajador?.full_name ?? "—"}</Td>
-                <Td className="text-muted-foreground">{b.equipo_utilizado ?? "—"}</Td>
-                <Td>
+                <Td hideOnMobile className="text-muted-foreground">
+                  {b.trabajador?.full_name ?? "—"}
+                </Td>
+                <Td hideOnMobile className="text-muted-foreground">{b.equipo_utilizado ?? "—"}</Td>
+                <Td hideOnMobile>
                   {b.fotos.length === 0 ? (
                     <span className="text-muted-foreground">
                       <ImageOff className="h-4 w-4" />

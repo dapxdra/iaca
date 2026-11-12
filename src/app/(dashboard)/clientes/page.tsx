@@ -6,7 +6,7 @@ import { listClientes } from "@/services/clientes.service";
 import { getAccesosPortal } from "@/services/portal-clientes.service";
 import { DashboardPageHeader } from "../_components/page-header";
 import { SearchField } from "../_components/search-field";
-import { TableWrap, Th, Td } from "@/components/ui/table";
+import { TableWrap, Th, Td, MobileOnly } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AccesoPortalBadge } from "@/components/ui/badge";
 import { DeleteForm } from "@/components/ui/delete-form";
@@ -57,21 +57,32 @@ export default async function ClientesPage({
           <thead>
             <tr>
               <Th>Nombre</Th>
-              <Th>Tipo</Th>
-              <Th>Identificación</Th>
-              <Th>Contacto</Th>
-              <Th>Portal</Th>
-              <Th>Alta</Th>
-              {canWrite && <Th className="w-0 text-right">Acciones</Th>}
+              <Th hideOnMobile>Tipo</Th>
+              <Th hideOnMobile>Identificación</Th>
+              <Th hideOnMobile>Contacto</Th>
+              <Th hideOnMobile>Portal</Th>
+              <Th hideOnMobile>Alta</Th>
+              {canWrite && (
+                <Th className="w-0 text-right">
+                  <span className="sr-only md:not-sr-only">Acciones</span>
+                </Th>
+              )}
             </tr>
           </thead>
           <tbody>
             {clientes.map((c) => (
               <tr key={c.id} data-cy={`cliente-row-${c.id}`} className="group">
-                <Td className="font-medium text-foreground">{c.nombre}</Td>
-                <Td className="text-muted-foreground">{TIPO_LABEL[c.tipo]}</Td>
-                <Td className="tabular-nums">{c.identificacion ?? "—"}</Td>
-                <Td>
+                <Td className="font-medium text-foreground">
+                  {c.nombre}
+                  {(c.telefono || c.email) && (
+                    <MobileOnly>
+                      <span className="tabular-nums">{c.telefono ?? c.email}</span>
+                    </MobileOnly>
+                  )}
+                </Td>
+                <Td hideOnMobile className="text-muted-foreground">{TIPO_LABEL[c.tipo]}</Td>
+                <Td hideOnMobile className="tabular-nums">{c.identificacion ?? "—"}</Td>
+                <Td hideOnMobile>
                   <div className="flex flex-col">
                     <span>{c.email ?? "—"}</span>
                     {c.telefono && (
@@ -79,14 +90,14 @@ export default async function ClientesPage({
                     )}
                   </div>
                 </Td>
-                <Td>
+                <Td hideOnMobile>
                   {accesos[c.id] ? (
                     <AccesoPortalBadge acceso={accesos[c.id]} />
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </Td>
-                <Td className="whitespace-nowrap text-muted-foreground">
+                <Td hideOnMobile className="whitespace-nowrap text-muted-foreground">
                   {formatDate(c.created_at)}
                 </Td>
                 {canWrite && (

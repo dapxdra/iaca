@@ -103,10 +103,10 @@ export default async function CobrosPage({
           <thead>
             <tr>
               <Th>Proyecto</Th>
-              <Th numeric>Monto a cobrar</Th>
-              <Th numeric>Pagado</Th>
+              <Th numeric hideOnMobile>Monto a cobrar</Th>
+              <Th numeric hideOnMobile>Pagado</Th>
               <Th numeric>Saldo</Th>
-              <Th>Último pago</Th>
+              <Th hideOnMobile>Último pago</Th>
               <Th className="w-0" />
             </tr>
           </thead>
@@ -117,10 +117,10 @@ export default async function CobrosPage({
                   <span className="font-medium tabular-nums text-foreground">{c.codigo}</span>
                   <span className="block text-muted-foreground">{c.nombre}</span>
                 </Td>
-                <Td numeric className="whitespace-nowrap">
+                <Td numeric hideOnMobile className="whitespace-nowrap">
                   {formatColones(c.monto_cobrar)}
                 </Td>
-                <Td numeric className="whitespace-nowrap text-muted-foreground">
+                <Td numeric hideOnMobile className="whitespace-nowrap text-muted-foreground">
                   {formatColones(c.total_pagado)}
                 </Td>
                 <Td
@@ -131,16 +131,18 @@ export default async function CobrosPage({
                 >
                   {formatColones(c.saldo_pendiente)}
                 </Td>
-                <Td className="whitespace-nowrap text-muted-foreground">
+                <Td hideOnMobile className="whitespace-nowrap text-muted-foreground">
                   {formatDate(c.fecha_ultimo_pago)}
                 </Td>
                 <Td className="text-right">
                   <Link
                     href={`/cobros/${c.proyecto_id}`}
                     data-cy={`cobro-gestionar-${c.proyecto_id}`}
+                    aria-label={`Gestionar ${c.codigo}`}
                     className="inline-flex items-center gap-1 whitespace-nowrap text-small font-medium text-accent transition-all hover:underline group-hover:translate-x-0.5"
                   >
-                    Gestionar <ChevronRight className="h-4 w-4" />
+                    <span className="hidden md:inline">Gestionar</span>
+                    <ChevronRight className="h-4 w-4" />
                   </Link>
                 </Td>
               </tr>
