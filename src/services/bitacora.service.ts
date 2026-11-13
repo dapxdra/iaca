@@ -14,9 +14,10 @@
  */
 import { createClient } from "@/lib/supabase/server";
 import type { DateRange } from "@/lib/date-range";
-import { BUCKETS, getSignedUrls } from "@/services/storage.service";
+import { BUCKETS, getDownloadUrls, getSignedUrls } from "@/services/storage.service";
 
 export type BitacoraFoto = { id: string; url: string | null; descripcion: string | null };
+export type BitacoraArchivo = { id: string; nombre: string; url: string | null };
 
 export type BitacoraEntry = {
   id: string;
@@ -30,16 +31,22 @@ export type BitacoraEntry = {
   proyecto: { id: string; codigo: string; nombre: string } | null;
   trabajador: { id: string; full_name: string } | null;
   fotos: BitacoraFoto[];
+  archivos: BitacoraArchivo[];
 };
 
 const SELECT =
   "id, fecha, hora_inicio, hora_fin, actividad, equipo_utilizado, clima, observaciones, " +
   "proyecto:proyectos!bitacora_campo_proyecto_id_fkey(id, codigo, nombre), " +
   "trabajador:profiles!bitacora_campo_trabajador_id_fkey(id, full_name), " +
-  "fotos:bitacora_fotos(id, storage_path, descripcion)";
+  "fotos:bitacora_fotos(id, storage_path, descripcion), " +
+  "archivos:archivos_proyecto!archivos_proyecto_bitacora_id_fkey(id, nombre_archivo, storage_path)";
 
 type RawFoto = { id: string; storage_path: string; descripcion: string | null };
-type RawEntry = Omit<BitacoraEntry, "fotos"> & { fotos: RawFoto[] };
+type RawArchivo = { id: string; nombre_archivo: string; storage_path: string };
+type RawEntry = Omit<BitacoraEntry, "fotos" | "archivos"> & {
+  fotos: RawFoto[];
+  archivos: RawArchivo[];
+};
 
 
 /** Entradas más recientes; si se pasa `proyectoId`, solo las de ese proyecto. */
@@ -66,7 +73,15 @@ export async function listBitacora(opts: {
 
   // URLs firmadas en un solo lote (no una llamada a Storage por foto).
   const allPaths = entries.flatMap((e) => e.fotos.map((f) => f.storage_path));
-  const urls = await getSignedUrls(BUCKETS.bitacoraFotos, allPaths);
+  const [urls, archivoUrls] = await Promise.all([
+    getSignedUrls(BUCKETS.bitacoraFotos, allPaths),
+    getDownloadUrls(
+      BUCKETS.archivosProyecto,
+      entries.flatMap((e) =>
+        e.archivos.map((a) => ({ path: a.storage_path, filename: a.nombre_archivo }))
+      )
+    ),
+  ]);
 
   return entries.map((e) => ({
     ...e,
@@ -74,6 +89,11 @@ export async function listBitacora(opts: {
       id: f.id,
       descripcion: f.descripcion,
       url: urls.get(f.storage_path) ?? null,
+    })),
+    archivos: e.archivos.map((a) => ({
+      id: a.id,
+      nombre: a.nombre_archivo,
+      url: archivoUrls.get(a.storage_path) ?? null,
     })),
   }));
 }

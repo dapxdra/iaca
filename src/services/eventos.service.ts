@@ -18,7 +18,7 @@ export type ProyectoEvento = {
 };
 
 export const eventoSchema = z.object({
-  proyecto_id: z.string().uuid(),
+  proyecto_id: z.guid(),
   fecha: z.string().date("Fecha inválida"),
   descripcion: z.string().trim().min(2, "Requerido").max(2000),
 });

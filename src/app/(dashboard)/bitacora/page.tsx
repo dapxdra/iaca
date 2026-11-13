@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, ImageOff } from "lucide-react";
+import { ClipboardList, Download, ImageOff } from "lucide-react";
 import { dashboardPages } from "@/config/site";
 import { requireRole, isStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
@@ -129,7 +129,28 @@ export default async function BitacoraPage({
                     <span className="tabular-nums text-foreground">{b.proyecto.codigo}</span>
                   )}
                 </Td>
-                <Td className="max-w-md text-foreground">{b.actividad}</Td>
+                <Td className="max-w-md text-foreground">
+                  {b.actividad}
+                  {b.archivos.length > 0 && (
+                    <ul className="mt-1.5 flex flex-col gap-1" data-cy={`bitacora-archivos-${b.id}`}>
+                      {b.archivos.map((a) =>
+                        a.url ? (
+                          <li key={a.id}>
+                            <a
+                              href={a.url}
+                              download={a.nombre}
+                              data-cy={`bitacora-archivo-descargar-${a.id}`}
+                              className="inline-flex max-w-full items-center gap-1 text-small font-medium text-accent hover:underline"
+                            >
+                              <Download className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">{a.nombre}</span>
+                            </a>
+                          </li>
+                        ) : null
+                      )}
+                    </ul>
+                  )}
+                </Td>
                 <Td hideOnMobile className="whitespace-nowrap tabular-nums text-muted-foreground">
                   {horas(b.hora_inicio, b.hora_fin)}
                 </Td>

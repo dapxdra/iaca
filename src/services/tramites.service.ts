@@ -60,12 +60,12 @@ const optionalDate = z.preprocess(
 
 export const tramiteSchema = z
   .object({
-    proyecto_id: z.string().uuid("Seleccioná un proyecto"),
+    proyecto_id: z.guid("Seleccioná un proyecto"),
     // null (no undefined) para que al editar se pueda desasociar. La base
     // valida que el subproyecto sea del mismo proyecto (FK compuesta, 0008_...).
     subproyecto_id: z.preprocess(
       (v) => emptyToUndefined(v) ?? null,
-      z.string().uuid("Subproyecto inválido").nullable()
+      z.guid("Subproyecto inválido").nullable()
     ),
     entidad: z.string().trim().min(2, "Requerido").max(200),
     tipo_tramite: z.enum(TRAMITE_TIPOS, "Seleccioná un tipo"),

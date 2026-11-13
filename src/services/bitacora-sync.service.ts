@@ -45,20 +45,20 @@ import {
 const nombreArchivo = z.string().trim().min(1).max(255);
 
 const fotoSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   nombre: nombreArchivo,
   tipo: z.enum(ALLOWED_IMAGE_TYPES, "Imagen no soportada (JPG, PNG, WEBP o HEIC)."),
   tamano: z.number().int().positive().max(MAX_FOTO_BYTES, `Máximo ${MAX_FOTO_MB} MB por foto.`),
 });
 
 const csvSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   nombre: nombreArchivo.refine((n) => extensionOf(n) === ".csv", "Debe ser un archivo .csv."),
   tamano: z.number().int().positive().max(MAX_CSV_BYTES, `Máximo ${MAX_CSV_MB} MB por CSV.`),
 });
 
 export const bitacoraSyncSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   entrada: bitacoraSchema,
   fotos: z.array(fotoSchema).max(MAX_FOTOS_POR_ENTRADA).default([]),
   csvs: z.array(csvSchema).max(MAX_CSV_POR_ENTRADA).default([]),
@@ -209,6 +209,7 @@ export async function syncBitacora(
         id: c.id,
         proyecto_id: entrada.proyecto_id,
         subproyecto_id: entrada.subproyecto_id,
+        bitacora_id: input.id,
         tipo: "csv" as const,
         nombre_archivo: c.nombre,
         storage_path: c.path,

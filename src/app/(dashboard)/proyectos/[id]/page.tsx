@@ -457,8 +457,7 @@ export default async function ProyectoDetallePage({
                 {a.url && (
                   <a
                     href={a.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    download={a.nombre_archivo}
                     data-cy={`archivo-descargar-${a.id}`}
                     className="inline-flex shrink-0 items-center gap-1 text-small font-medium text-accent hover:underline"
                   >

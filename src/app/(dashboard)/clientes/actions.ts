@@ -39,7 +39,7 @@ export const createClienteAction = makeFormAction({
 });
 
 export const updateClienteAction = makeFormAction({
-  schema: clienteSchema.extend({ id: z.string().uuid(), portal: portalSchema }),
+  schema: clienteSchema.extend({ id: z.guid(), portal: portalSchema }),
   handler: async ({ id, portal, ...data }) => {
     if (portal === "invitar") await validarAccesoPortal(data.email, id);
     await updateCliente(id, data);

@@ -19,7 +19,7 @@ export const createTramiteAction = makeFormAction({
 // tramiteSchema lleva un .refine(), así que no tiene .extend(); se intersecta
 // con el id vía .and().
 export const updateTramiteAction = makeFormAction({
-  schema: z.object({ id: z.string().uuid() }).and(tramiteSchema),
+  schema: z.object({ id: z.guid() }).and(tramiteSchema),
   handler: ({ id, ...data }) => updateTramite(id, data),
   revalidate: ["/tramites", "/proyectos"],
   successMessage: "Cambios guardados.",

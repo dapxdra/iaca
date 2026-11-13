@@ -68,4 +68,4 @@ export function makeFormAction<S extends z.ZodType>(opts: {
 }
 
 /** Schema mínimo para acciones de borrado: solo `id`. */
-export const idOnlySchema = z.object({ id: z.string().uuid() });
+export const idOnlySchema = z.object({ id: z.guid() });

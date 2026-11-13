@@ -81,11 +81,11 @@ const optionalDate = z.preprocess(
   emptyToUndefined,
   z.string().date("Fecha inválida").optional()
 );
-const optionalUuid = z.preprocess(emptyToUndefined, z.string().uuid().optional());
+const optionalUuid = z.preprocess(emptyToUndefined, z.guid().optional());
 
 export const proyectoSchema = z.object({
   nombre: z.string().trim().min(3, "Requerido").max(200),
-  cliente_id: z.string().uuid("Seleccioná un cliente"),
+  cliente_id: z.guid("Seleccioná un cliente"),
   tipo_servicio: optionalText,
   descripcion: z.preprocess(emptyToUndefined, z.string().trim().max(2000).optional()),
   provincia: optionalText,
@@ -202,7 +202,7 @@ export async function updateProyecto(id: string, input: ProyectoInput): Promise<
 }
 
 export const cambiarEstadoSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   estado: z.enum([
     "contacto",
     "cotizacion_agenda",
@@ -320,7 +320,7 @@ const checkbox = z.preprocess((v) => v === "on" || v === "true", z.boolean());
 
 export const subproyectoSchema = z
   .object({
-    proyecto_id: z.string().uuid(),
+    proyecto_id: z.guid(),
     nombre: z.string().trim().min(2, "Requerido").max(200),
     descripcion: z.preprocess(emptyToUndefined, z.string().trim().max(1000).optional()),
     // Si se marca, el trámite se crea junto con el subproyecto, en estado pendiente.
@@ -393,7 +393,7 @@ export async function listSubproyectoOptions(): Promise<
 }
 
 export const cambiarEstadoSubproyectoSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   estado: z.enum(["tramite", "carga_apt", "minutas", "preparacion", "cerrado", "cancelado"]),
 });
 
@@ -426,7 +426,7 @@ export async function cambiarEstadoSubproyecto(
 /** Un checkbox por estado de segundo plano; se guardan como lista. */
 export const estadosSecundariosSchema = z
   .object({
-    id: z.string().uuid(),
+    id: z.guid(),
     mantenimiento: checkbox,
     apelacion: checkbox,
     visado: checkbox,

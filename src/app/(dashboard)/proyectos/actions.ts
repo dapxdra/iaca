@@ -27,7 +27,7 @@ export const createProyectoAction = makeFormAction({
 });
 
 export const updateProyectoAction = makeFormAction({
-  schema: proyectoSchema.extend({ id: z.string().uuid() }),
+  schema: proyectoSchema.extend({ id: z.guid() }),
   handler: ({ id, ...data }) => updateProyecto(id, data),
   revalidate: ["/proyectos", "/cobros", "/kpi"],
   successMessage: "Cambios guardados.",

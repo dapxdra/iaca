@@ -62,6 +62,32 @@ export async function getStoredFileInfo(
   return { size: data.size ?? null, contentType: data.contentType ?? null };
 }
 
+/**
+ * URLs firmadas de descarga, una por archivo. Con `download` Storage responde
+ * `Content-Disposition: attachment` con el nombre original: sin eso un CSV se
+ * abre como texto en una pestaña y se guardaría con el nombre interno
+ * (`<id>-nombre.csv`). `createSignedUrls` (en lote) no admite un nombre por
+ * archivo, de ahí una llamada por cada uno.
+ */
+export async function getDownloadUrls(
+  bucket: Bucket,
+  files: { path: string; filename: string }[]
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  if (files.length === 0) return map;
+
+  const supabase = await createClient();
+  await Promise.all(
+    files.map(async ({ path, filename }) => {
+      const { data } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(path, SIGNED_URL_TTL_SECONDS, { download: filename });
+      if (data?.signedUrl) map.set(path, data.signedUrl);
+    })
+  );
+  return map;
+}
+
 /** URLs firmadas en lote para un conjunto de rutas de un mismo bucket. */
 export async function getSignedUrls(
   bucket: string,

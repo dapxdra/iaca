@@ -73,7 +73,7 @@ export async function listCobrosProyectos(filters: CobroFilters = {}): Promise<C
   if (filters.estado === "pendiente") query = query.gt("saldo_pendiente", 0);
   if (filters.estado === "al_dia") query = query.not("monto_cobrar", "is", null).lte("saldo_pendiente", 0);
   if (filters.estado === "sin_monto") query = query.is("monto_cobrar", null);
-  if (filters.clienteId && z.string().uuid().safeParse(filters.clienteId).success) {
+  if (filters.clienteId && z.guid().safeParse(filters.clienteId).success) {
     query = query.eq("cliente_id", filters.clienteId);
   }
   if (filters.ultimoPago?.desde) query = query.gte("fecha_ultimo_pago", filters.ultimoPago.desde);
@@ -107,7 +107,7 @@ export async function listPagos(proyectoId: string): Promise<Pago[]> {
 }
 
 export const montoCobrarSchema = z.object({
-  proyectoId: z.string().uuid(),
+  proyectoId: z.guid(),
   // El input llega como string desde FormData; permitimos vacío = "sin definir".
   montoCobrar: z.preprocess(
     emptyToUndefined,
@@ -128,7 +128,7 @@ export async function setMontoCobrar(
 }
 
 export const registrarPagoSchema = z.object({
-  proyectoId: z.string().uuid(),
+  proyectoId: z.guid(),
   monto: z.coerce.number().positive("Debe ser mayor que cero").max(1_000_000_000),
   fechaPago: z.string().date("Fecha inválida"),
   metodo: z.enum(["efectivo", "sinpe_movil", "transferencia", "cheque", "otro"]),

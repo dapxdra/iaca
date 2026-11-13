@@ -76,6 +76,7 @@ export type Database = {
       }
       archivos_proyecto: {
         Row: {
+          bitacora_id: string | null
           created_at: string
           id: string
           nombre_archivo: string
@@ -87,6 +88,7 @@ export type Database = {
           tipo: Database["public"]["Enums"]["archivo_tipo"]
         }
         Insert: {
+          bitacora_id?: string | null
           created_at?: string
           id?: string
           nombre_archivo: string
@@ -98,6 +100,7 @@ export type Database = {
           tipo: Database["public"]["Enums"]["archivo_tipo"]
         }
         Update: {
+          bitacora_id?: string | null
           created_at?: string
           id?: string
           nombre_archivo?: string
@@ -109,6 +112,13 @@ export type Database = {
           tipo?: Database["public"]["Enums"]["archivo_tipo"]
         }
         Relationships: [
+          {
+            foreignKeyName: "archivos_proyecto_bitacora_id_fkey"
+            columns: ["bitacora_id"]
+            isOneToOne: false
+            referencedRelation: "bitacora_campo"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "archivos_proyecto_proyecto_id_fkey"
             columns: ["proyecto_id"]

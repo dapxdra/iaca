@@ -18,8 +18,8 @@ const optionalTime = z.preprocess(
 
 export const bitacoraSchema = z
   .object({
-    proyecto_id: z.string().uuid("Seleccioná un proyecto"),
-    subproyecto_id: z.preprocess(emptyToUndefined, z.string().uuid().optional()),
+    proyecto_id: z.guid("Seleccioná un proyecto"),
+    subproyecto_id: z.preprocess(emptyToUndefined, z.guid().optional()),
     fecha: z.string().date("Fecha inválida"),
     hora_inicio: optionalTime,
     hora_fin: optionalTime,

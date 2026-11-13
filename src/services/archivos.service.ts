@@ -4,7 +4,7 @@
  * lectura solo "field staff" (nunca cliente).
  */
 import { createClient } from "@/lib/supabase/server";
-import { BUCKETS, getSignedUrls } from "@/services/storage.service";
+import { BUCKETS, getDownloadUrls } from "@/services/storage.service";
 import type { Database } from "@/types/database";
 
 export type ArchivoTipo = Database["public"]["Enums"]["archivo_tipo"];
@@ -42,9 +42,9 @@ export async function listArchivosProyecto(proyectoId: string): Promise<ArchivoP
     subido_por: { full_name: string } | null;
   }>;
 
-  const urls = await getSignedUrls(
+  const urls = await getDownloadUrls(
     BUCKETS.archivosProyecto,
-    rows.map((r) => r.storage_path)
+    rows.map((r) => ({ path: r.storage_path, filename: r.nombre_archivo }))
   );
 
   return rows.map(({ storage_path, ...r }) => ({
